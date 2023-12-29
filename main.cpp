@@ -2,6 +2,7 @@
 #include "Request.hpp"
 #include "config/Config.hpp"
 #include <iostream>
+#include <arpa/inet.h>
 
 // int main()
 // {
@@ -26,21 +27,39 @@
 
 int main()
 {
-    Config c("configs/default.conf");
 
-    std::string content = c.getContent();
+    try 
+    {
+        Config c("configs/default.conf");
 
-    std::cout<< content <<std::endl;
-
-    std::string block;
-
-    trimPrefixSuffixConfig(content);
-
-    if (!getBlock(content, block, "location")){
-        std::cout << "get block fail" << std::endl;
+        c.printConfigInfo();
     }
-
-    std::cout << "block = " << block << std::endl;
-    std::cout << "content = " << content << content.length() << std::endl;
+    catch(std::string error) 
+    {  
+        std::cout << "error: " << error << std::endl;
+    }
     
+
+    // std::string content = c.getContent();
+
+    // std::cout<< content <<std::endl;
+
+    // std::string block;
+
+    // int index = 0;
+
+    // while (ft_is_white_space(content[index]))
+    // {
+    //     index++;
+    // }
+
+    // std::cout << "index = " << index <<std::endl;
+    // block = findBlock(content.substr(index, content.length()), "location");
+    
+    // if (block.length() == 0){
+    //     std::cout << "get block fail" << std::endl;
+    // }
+
+    // std::cout << "block = " << block << std::endl;
+    // std::cout << "content = " << content << content.length() << std::endl;
 }

@@ -8,6 +8,8 @@
 # include "config/Server.hpp"
 # include "utils.hpp"
 
+class Server;
+
 class Config {
     public:
         Config(std::string const configPath);
@@ -18,6 +20,8 @@ class Config {
         bool            validateConfig();
         std::string     getContent();
         bool            validateContent();
+
+        void            printConfigInfo();
 
     private:
         std::string         _path;

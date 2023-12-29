@@ -63,6 +63,7 @@ bool    ft_isdigit(std::string input)
             return false;
         }
     }
+    
     return true;
 }
 
@@ -80,6 +81,68 @@ int     ft_stoi(std::string input)
         result = result * 10 + input[i] - '0';
     }
     return result;
+}
+
+bool    ft_is_valid_host(std::string input)
+{
+    std::string travel = input;
+    std::string tempString = "";
+    int         tempInt = 0;
+
+    for (int i = 0; i < 3; i++)
+    {
+        tempString = splitString(travel, ".");
+        if (tempString == "" || !ft_isdigit(tempString))
+        {
+            return false;
+        }
+
+        tempInt = ft_stoi(tempString);
+        if (tempInt > 255 || tempInt < 0)
+        {
+            return false;
+        }
+    }
+
+    if (travel == "" || !ft_isdigit(travel))
+    {
+        return false;
+    }
+
+    tempInt = ft_stoi(travel);
+    if (tempInt > 255 || tempInt < 0)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+unsigned long   ft_pton(std::string host)
+{
+    std::string     travel = host;
+    std::string     tempString = "";
+    int             tempInt[3];
+    unsigned long   rtn = 0;
+
+    if (!ft_is_valid_host(host))
+    {
+        return 0;
+    }
+
+    for (int i = 0; i < 3; i++)
+    {
+        tempString = splitString(travel, ".");
+        tempInt[i] = ft_stoi(tempString);
+    }
+
+    rtn = ft_stoi(travel);
+    for (int i = 2; i >= 0; i--)
+    {
+        rtn = (rtn * 256) + tempInt[i];
+    }
+
+    return rtn;
 }
 
 std::string ft_toupper(std::string input)
@@ -103,6 +166,16 @@ std::string ft_to_string(size_t num)
 
     str1 << num;
     return (str1.str());
+}
+
+bool ft_is_white_space(char c)
+{
+    if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v')
+    {
+        return true;
+    }
+
+    return false;
 }
 
 /* trim prefix white space ,tab ,line feed ,carriage return and verticle tab */
@@ -135,18 +208,18 @@ void    trimPrefixSuffixConfig(std::string &input)
 }
 
 /* return true when success, return false when fail */
-bool    getBlock(std::string &src, std::string &des, std::string blockName)
+std::string    findBlock(std::string src, std::string blockName)
 {
-    int count = 0;
-    size_t index = 0;
-    bool result = false;
+    int             count = 0;
+    size_t          index = 0;
+    std::string     des;
 
     index = src.find(blockName);
 
     /* first word isn't "server" */
     if (index != 0)
     {
-        return result;
+        return des;
     }
 
     index += blockName.length();
@@ -184,12 +257,44 @@ bool    getBlock(std::string &src, std::string &des, std::string blockName)
 
     if (count == 0)
     {
-        result = true;
         des = src.substr(0, index + 1);
-        src = src.substr(index, src.length());
     }
 
-    return result;
+    return des;
+}
+
+std::string findNextWord(std::string src)
+{
+    int         index;
+    std::string des;
+
+    /* delimeter in config nginx */
+    if (src[0] == '{' || src[0] == '}' || src[0] == ';')
+    {
+        return (src.substr(0, 1));
+    }
+
+    while (index < src.length())
+    {
+        if (ft_is_white_space(src[index]))
+        {
+            return (src.substr(0, index));
+        }
+
+        /* delimeter in config nginx */
+        switch (src[index])
+        {
+            case '{':
+                return (src.substr(0, index));
+            case '}':
+                return (src.substr(0, index));
+            case ';':
+                return (src.substr(0, index));
+        }
+        index++;
+    }
+
+    return (src.substr(0, index));
 }
 
 bool removeBracket(std::string &src, std::string prefix)
@@ -239,14 +344,4 @@ bool removeBracket(std::string &src, std::string prefix)
         }
     }
     return false;
-}
-
-std::vector<std::string>            splitConfig(std::string line)
-{
-    int index = 0;
-
-    while (index < line.length())
-    {
-        index++;
-    }
 }

@@ -4,6 +4,7 @@
 # include <map>
 # include <vector>
 # include <iostream>
+# include <sstream>
 # include "config/Location.hpp"
 # include "utils.hpp"
 
@@ -19,19 +20,31 @@ class Server {
         Server &operator=(Server const &serv);
         ~Server();
 
+        unsigned long               getHost() const;
+        int                         getPort() const;
+        std::string                 getServerName() const;
+        std::map<int, std::string>  getErrorPage() const;
+        std::vector<std::string>    getIndex() const;
+        bool                        getAutoIndex() const;
+        size_t                      getClientMaxBodySize() const;
+        std::vector<Location>       getLocations() const;
+        std::string                 getRoot() const;
+
         void printServerInfo();
     private:
-        std::string                     _host;
+        unsigned long                   _host;
         int                             _port;
         std::string                     _server_name;
         std::map<int, std::string>      _error_page;
         std::vector<std::string>        _index;
         bool                            _autoindex;
         size_t                          _client_max_body_size;
-        // std::vector<Location>           _locations;
+        std::vector<Location>           _locations;
         std::string                     _root;
 
+        void                            initErrorPage();
         void                            parseServer(std::string serverConfig);
+        bool                            setServerParameter(std::string param, std::vector<std::string> value);
 };
 
 #endif

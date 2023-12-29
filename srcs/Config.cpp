@@ -2,8 +2,14 @@
 
 Config::Config(std::string const configPath)
 {
+    std::cout << "start Config()" << std::endl;
     this->_path = configPath;
+
+    std::cout << "read Config()" << std::endl;
     this->readContent();
+
+    std::cout << "parse Config()" << std::endl;
+    this->parseConfig();
 }
 
 Config::Config(Config const &configFile)
@@ -75,22 +81,30 @@ void    Config::readContent()
 
 bool    Config::parseConfig()
 {
-    std::string tempContent = this->_content;
+    std::string content = this->_content;
 
-    trimPrefixSuffixConfig(tempContent);
+    // std::cout << this->_content << std::endl;
 
-    while (tempContent.length() > 0)
+    int index = 0;
+
+    while (index < content.length())
     {
-        std::string block = "";
-        if (!getBlock(tempContent, block, "server"))
+        while (ft_is_white_space(content[index]))
+        {
+            index++;
+        }
+
+        std::string block = findBlock(content.substr(index, content.length()) ,"server");
+        if (block.length() == 0)
         {
             return false;
         }
-
+    
         Server serv(block);
-        serv.printServerInfo();
+        // serv.printServerInfo();
         this->_servers.push_back(serv);
-        trimPrefixSuffixConfig(tempContent);
+
+        index += block.length();
     }
     return true;
 }
@@ -98,4 +112,14 @@ bool    Config::parseConfig()
 std::string Config::getContent()
 {
     return (this->_content);
+}
+
+void Config::printConfigInfo()
+{
+    std::vector<Server>::iterator it;
+
+    for (it = this->_servers.begin(); it != _servers.end(); it++)
+    {
+        (*it).printServerInfo();
+    }
 }
