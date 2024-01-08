@@ -265,7 +265,7 @@ std::string    findBlock(std::string src, std::string blockName)
 
 std::string findNextWord(std::string src)
 {
-    int         index;
+    int         index = 0;
     std::string des;
 
     /* delimeter in config nginx */

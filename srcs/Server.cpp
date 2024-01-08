@@ -64,12 +64,10 @@ void    Server::parseServer(std::string serverConfig)
         }
 
         word = findNextWord(serverConfig.substr(index, serverConfig.length()));
-        // std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
         if (currentParameter == "")
         {
             if (word == "server")
             {
-                // std::cout << "in server" << std::endl;
                 if (inBracket)
                 {
                     std::string errorMessage = "Invalid syntax found server inside server" ;
@@ -102,9 +100,6 @@ void    Server::parseServer(std::string serverConfig)
                 inBracket = false;
                 index += word.length();
             } else {
-                // throw(word);
-                // storeValue.push_back(word);
-                // index += word.length();
                 currentParameter = word;
                 index += word.length();
             }

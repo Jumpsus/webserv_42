@@ -83,8 +83,6 @@ bool    Config::parseConfig()
 {
     std::string content = this->_content;
 
-    // std::cout << this->_content << std::endl;
-
     int index = 0;
 
     while (index < content.length())
@@ -101,7 +99,6 @@ bool    Config::parseConfig()
         }
     
         Server serv(block);
-        // serv.printServerInfo();
         this->_servers.push_back(serv);
 
         index += block.length();
