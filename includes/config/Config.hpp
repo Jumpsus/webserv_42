@@ -17,11 +17,12 @@ class Config {
         Config &operator=(Config const &conf);
         ~Config();
 
-        bool            validateConfig();
-        std::string     getContent();
-        bool            validateContent();
+        bool                    validateConfig();
+        std::string             getContent();
+        bool                    validateContent();
+        std::vector<Server>     getServers();
 
-        void            printConfigInfo();
+        void                    printConfigInfo();
 
     private:
         std::string         _path;

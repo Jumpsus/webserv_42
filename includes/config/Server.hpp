@@ -5,6 +5,8 @@
 # include <vector>
 # include <iostream>
 # include <sstream>
+# include <sys/socket.h>
+# include <netinet/in.h>
 # include "config/Location.hpp"
 # include "utils.hpp"
 
@@ -14,12 +16,14 @@ class Location;
 
 class Server {
     public:
-        // Server();
+        Server();
         Server(std::string const serverConfig);
         Server(Server const &serv);
         Server &operator=(Server const &serv);
         ~Server();
 
+        int                         getFd();
+        void                        setFd(int sd);
         unsigned long               getHost() const;
         int                         getPort() const;
         std::string                 getServerName() const;
@@ -30,8 +34,10 @@ class Server {
         std::vector<Location>       getLocations() const;
         std::string                 getRoot() const;
 
-        void printServerInfo();
+        void                        setServer();
+        void                        printServerInfo();
     private:
+        int                             _fd;
         unsigned long                   _host;
         int                             _port;
         std::string                     _server_name;

@@ -85,7 +85,7 @@ void    Location::parseLocation(std::string locationConfig)
         }
 
         word = findNextWord(locationConfig.substr(index, locationConfig.length()));
-        std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
+        // std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
         if (currentParameter == "")
         {
             if (word == "location")

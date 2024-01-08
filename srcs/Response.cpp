@@ -17,7 +17,7 @@ Response::Response(Response const &response)
 
 Response &Response::operator=(Response const &response)
 {
-
+    return (*this);
 }
 
 // std::string Response::getResponse()

@@ -114,6 +114,11 @@ std::string Config::getContent()
     return (this->_content);
 }
 
+std::vector<Server>     Config::getServers()
+{
+    return (this->_servers);
+}
+
 void Config::printConfigInfo()
 {
     std::vector<Server>::iterator it;

@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include "Request.hpp"
 #include "config/Config.hpp"
+#include "ServerManager.hpp"
 #include <iostream>
 #include <arpa/inet.h>
 
@@ -28,16 +29,29 @@
 int main()
 {
 
+    std::vector<Server> servers;
+
     try 
     {
-        Config c("configs/default.conf");
+        Config conf("configs/default.conf");
 
-        c.printConfigInfo();
+        // conf.printConfigInfo();
+
+        servers = conf.getServers();
     }
     catch(std::string error) 
     {  
         std::cout << "error: " << error << std::endl;
     }
+
+    for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
+    {
+        it->printServerInfo();
+    }
+
+    ServerManager server_manager(servers);
+    server_manager.setServers();
+    server_manager.startServers();
     
 
     // std::string content = c.getContent();

@@ -1,10 +1,15 @@
 #include "config/Server.hpp"
 #include <unistd.h>
 
+Server::Server() {
+    // shouldn't call this function;
+}
+
 Server::Server(std::string const serverConfig)
 {
     std::cout << "start Server()" << std::endl;
     /* set default value */
+    _fd = 0;
     _host = 0;
     _port = 80;
     _server_name = "";
@@ -19,6 +24,7 @@ Server::Server(std::string const serverConfig)
 Server::Server(Server const &serv)
 {
     if (this != &serv) {
+        _fd = serv._fd;
         _host = serv._host;
         _port = serv._port;
         _server_name = serv._server_name;
@@ -59,12 +65,12 @@ void    Server::parseServer(std::string serverConfig)
         }
 
         word = findNextWord(serverConfig.substr(index, serverConfig.length()));
-        std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
+        // std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
         if (currentParameter == "")
         {
             if (word == "server")
             {
-                std::cout << "in server" << std::endl;
+                // std::cout << "in server" << std::endl;
                 if (inBracket)
                 {
                     std::string errorMessage = "Invalid syntax found server inside server" ;
@@ -84,33 +90,9 @@ void    Server::parseServer(std::string serverConfig)
                 }
 
                 Location loc(block, *this);
-                loc.printLocationInfo();
+                // loc.printLocationInfo();
                 this->_locations.push_back(loc);
                 index += block.length();
-            // } else if (word == "host") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "listen") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "server_name") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "error_page") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "index") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "autoindex") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "client_max_body_size") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "root") {
-            //     currentParameter = word;
-            //     index += word.length();
             } else if (word == "}") {
                 if (!inBracket)
                 {
@@ -256,6 +238,7 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
 Server  &Server::operator=(Server const &serv)
 {
     if (this != &serv) {
+        _fd = serv._fd;
         _host = serv._host;
         _port = serv._port;
         _server_name = serv._server_name;
@@ -274,6 +257,17 @@ Server::~Server()
     _error_page.clear();
     _index.clear();
     _locations.clear();
+}
+
+int                         Server::getFd()
+{
+    return this->_fd;
+}
+
+void                        Server::setFd(int sd)
+{
+    this->_fd = sd;
+    return ;
 }
 
 unsigned long               Server::getHost() const
@@ -314,6 +308,38 @@ size_t                      Server::getClientMaxBodySize() const
 std::string                 Server::getRoot() const
 {
     return this->_root;
+}
+
+void                        Server::setServer()
+{
+    struct sockaddr_in addr;
+
+    _fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (_fd < 0)
+    {
+        std::cerr << "init socket error " << std::endl;
+        exit(-1);
+    }
+
+    int option = 1;
+    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&option, sizeof(option))) {
+        std::cerr << "set sock opt fail :" << errno << std::endl;
+        close(_fd);
+        exit(-1);
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = this->_host;
+    addr.sin_port = htons(this->_port);
+
+    if (bind(_fd, (struct sockaddr*) &addr, sizeof(addr))) {
+        std::cerr << "bind error: " << errno << std::endl;
+        close(_fd);
+        exit(-1);
+    }
+
+    return ;
 }
 
 void    Server::printServerInfo()
