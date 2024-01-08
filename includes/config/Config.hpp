@@ -22,7 +22,7 @@ class Config {
         bool            validateContent();
 
         void            printConfigInfo();
-
+        
     private:
         std::string         _path;
         std::string         _content;

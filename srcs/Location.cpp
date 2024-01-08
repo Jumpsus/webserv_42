@@ -70,10 +70,10 @@ void    Location::initAllowMethods(bool input)
 
 void    Location::parseLocation(std::string locationConfig)
 {
-    int                         index = 0;
-    bool                        inBracket = false;
+    size_t                      index = 0;
     std::string                 word;
-    std::string                 currentParameter;
+    std::string                 currentParameter = "";
+    std::string                 substr_lc;
     std::vector<std::string>    storeValue;
 
     while (index < locationConfig.length())
@@ -83,79 +83,36 @@ void    Location::parseLocation(std::string locationConfig)
             index++;
             continue;
         }
-
-        word = findNextWord(locationConfig.substr(index, locationConfig.length()));
-        std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
-        if (currentParameter == "")
-        {
-            if (word == "location")
+        substr_lc = locationConfig.substr(index, locationConfig.length());
+        word = findNextWord(substr_lc);
+        //std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
+        if (word == "{" || word == "}") {
+            if (currentParameter != "")
+                throw (std::string("location: found \'{\' or \'}\'"));
+            index += word.length();
+        } 
+        else if (word == ";") {
+            if (currentParameter == "")
+                throw (std::string("location: found \';\' without parameter or statements"));
+            if (!setLocationParameter(currentParameter, storeValue))
             {
-                if (inBracket)
-                {
-                    std::string errorMessage = "Invalid syntax found location inside location" ;
-                    storeValue.clear();
-                    throw(errorMessage);
-                }
-                currentParameter = word;
-                index += word.length();
-            } else if (word == "}") {
-                if (!inBracket)
-                {
-                    std::string errorMessage = "Invalid syntax found no scope before }" ;
-                    storeValue.clear();
-                    throw(errorMessage);
-                }
-                inBracket = false;
-                index += word.length();
-            } else {
-                currentParameter = word;
-                index += word.length();
+                std::string errorMessage = "Cannot set value ";
+                std::vector<std::string>::iterator    it;
+                for (it = storeValue.begin(); it != storeValue.end(); it++)
+                    errorMessage = errorMessage + " " + *it;
+                errorMessage = errorMessage + " in Parameter : " + currentParameter;
+                throw(errorMessage);
             }
-        } else {
-            if (word == "{") { 
-                if (currentParameter == "location") {
-                    if (!setLocationParameter(currentParameter, storeValue))
-                    {
-                        std::string errorMessage = "Cannot set value " + word;
-                        std::vector<std::string>::iterator    it;
-
-                        for (it = storeValue.begin(); it != storeValue.end(); it++)
-                        {
-                            errorMessage = errorMessage + " " + *it;
-                        }
-
-                        errorMessage = errorMessage + " in Parameter :" + currentParameter;
-                        throw(errorMessage);
-                    }
-                    inBracket = true;
-                    storeValue.clear();
-                    currentParameter = "";
-                } else {
-                    std::string errorMessage = "Invalid syntax: Found \'{\' in wrong place after ", currentParameter ;
-                    throw(errorMessage);
-                }
-                    index += word.length();
-            } else if (word == ";") {
-                if (!setLocationParameter(currentParameter, storeValue))
-                {
-                    std::string errorMessage = "Cannot set value " + word;
-                    std::vector<std::string>::iterator    it;
-
-                    for (it = storeValue.begin(); it != storeValue.end(); it++)
-                    {
-                        errorMessage = errorMessage + " " + *it;
-                    }
-
-                    errorMessage = errorMessage + " in Parameter : " + currentParameter;
-                    throw(errorMessage);
-                }
-                storeValue.clear();
-                currentParameter = "";
-                index += word.length();
-            } else {
+            storeValue.clear();
+            currentParameter = "";
+            index += word.length();
+        }
+        else {
+            if (currentParameter == "")
+                currentParameter = word;
+            else
                 storeValue.push_back(word);
-                index += word.length();
-            }
+            index += word.length();
         }
     }
     storeValue.clear();
@@ -257,8 +214,6 @@ bool Location::setLocationParameter(std::string param, std::vector<std::string> 
         }
         this->_root = value[0];
         
-    } else {
-       return false;
     }
     return true;
 }

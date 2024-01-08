@@ -31,6 +31,8 @@ class Server {
         std::string                 getRoot() const;
 
         void printServerInfo();
+
+        
     private:
         unsigned long                   _host;
         int                             _port;

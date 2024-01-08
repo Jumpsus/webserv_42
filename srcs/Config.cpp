@@ -10,6 +10,9 @@ Config::Config(std::string const configPath)
 
     std::cout << "parse Config()" << std::endl;
     this->parseConfig();
+
+    if (this->_servers.size() == 0)
+        throw(std::string("can't build server"));
 }
 
 Config::Config(Config const &configFile)
@@ -82,10 +85,7 @@ void    Config::readContent()
 bool    Config::parseConfig()
 {
     std::string content = this->_content;
-
-    // std::cout << this->_content << std::endl;
-
-    int index = 0;
+    size_t index = 0;
 
     while (index < content.length())
     {
@@ -94,16 +94,17 @@ bool    Config::parseConfig()
             index++;
         }
 
-        std::string block = findBlock(content.substr(index, content.length()) ,"server");
+        std::string content = this->_content.substr(index, this->_content.length());
+        std::string block = findBlock(content ,"server ");
+        index += shiftBlock(content, "server");
         if (block.length() == 0)
         {
             return false;
         }
-    
         Server serv(block);
         // serv.printServerInfo();
         this->_servers.push_back(serv);
-
+        
         index += block.length();
     }
     return true;

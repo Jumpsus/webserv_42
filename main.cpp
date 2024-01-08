@@ -25,12 +25,19 @@
 //     }
 // }
 
-int main()
+int main(int ac, char **av)
 {
+    std::string config_path;
 
+    if (ac > 2)
+    {
+        std::cout << "You must input only 1 argument" << std::endl;
+        return 1;
+    }
+    ac == 1 ? config_path = "configs/default.conf" : config_path = av[1];
     try 
     {
-        Config c("configs/default.conf");
+        Config c(config_path);
 
         c.printConfigInfo();
     }

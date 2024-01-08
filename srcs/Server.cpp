@@ -14,6 +14,8 @@ Server::Server(std::string const serverConfig)
 
     initErrorPage();
     parseServer(serverConfig);
+    if (_locations.size() == 0)
+        throw (std::string("location not declared in server"));
 }
 
 Server::Server(Server const &serv)
@@ -44,10 +46,10 @@ void    Server::initErrorPage()
 
 void    Server::parseServer(std::string serverConfig)
 {
-    int                         index = 0;
-    bool                        inBracket = false;
+    size_t                      index = 0;
+    std::string                 currentParameter = "";
+    std::string                 substr_sc;
     std::string                 word;
-    std::string                 currentParameter;
     std::vector<std::string>    storeValue;
 
     while (index < serverConfig.length())
@@ -57,116 +59,55 @@ void    Server::parseServer(std::string serverConfig)
             index++;
             continue;
         }
-
-        word = findNextWord(serverConfig.substr(index, serverConfig.length()));
-        std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
-        if (currentParameter == "")
-        {
-            if (word == "server")
+        substr_sc = serverConfig.substr(index, serverConfig.length());
+        word = findNextWord(substr_sc);
+        if (word == "location") {
+            currentParameter = "";
+            std::string loc_block = findBlock(substr_sc, "location");
+            index += shiftBlock(substr_sc, "location");
+            if (loc_block.length() == 0)
+                throw (std::string("improper location configuration"));
+            Location loc(loc_block, *this); //can't initialize loc, must be editted
+            //loc.printLocationInfo(); //for check only 2b delet
+            this->_locations.push_back(loc);
+            index += loc_block.length();
+        }
+        else if (word == "{") {
+            if (currentParameter != "") //since "location" has been handled by above block
+                throw (std::string("server: found \'{\' in wrong place after " + currentParameter));
+            index += word.length();
+        }
+        else if (word == ";") {
+            if (currentParameter == "")
+                throw (std::string("server: found \';\' without parameter or statements"));
+            if (!setServerParameter(currentParameter, storeValue))
             {
-                std::cout << "in server" << std::endl;
-                if (inBracket)
-                {
-                    std::string errorMessage = "Invalid syntax found server inside server" ;
-                    storeValue.clear();
-                    std::cout << errorMessage << std::endl;
-                    throw(errorMessage);
-                }
-                currentParameter = word;
-                index += word.length();
-            } else if (word == "location") {
-                std::string block = findBlock(serverConfig.substr(index, serverConfig.length()) ,"location");
-                if (block.length() == 0)
-                {
-                    std::string errorMessage = "Invalid syntax found on location Block" ;
-                    storeValue.clear();
-                    throw(errorMessage);
-                }
-
-                Location loc(block, *this);
-                loc.printLocationInfo();
-                this->_locations.push_back(loc);
-                index += block.length();
-            // } else if (word == "host") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "listen") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "server_name") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "error_page") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "index") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "autoindex") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "client_max_body_size") {
-            //     currentParameter = word;
-            //     index += word.length();
-            // } else if (word == "root") {
-            //     currentParameter = word;
-            //     index += word.length();
-            } else if (word == "}") {
-                if (!inBracket)
-                {
-                    std::string errorMessage = "Invalid syntax found no scope before }" ;
-                    storeValue.clear();
-                    throw(errorMessage);
-                }
-                inBracket = false;
-                index += word.length();
-            } else {
-                // throw(word);
-                // storeValue.push_back(word);
-                // index += word.length();
-                currentParameter = word;
-                index += word.length();
+                std::string errorMessage = "Cannot set value ";
+                for (s_iter it = storeValue.begin(); it != storeValue.end(); ++it)
+                    errorMessage += " " + *it;
+                errorMessage += " in parameter " + currentParameter;
+                throw(errorMessage);
             }
-        } else {
-            if (word == "{") { 
-                if (currentParameter == "server") {
-                    inBracket = true;
-                    storeValue.clear();
-                    currentParameter = "";
-                } else {
-                    std::string errorMessage = "Invalid syntax: Found \'{\' in wrong place after ", currentParameter ;
-                    throw(errorMessage);
-                }
-                    index += word.length();
-            } else if (word == ";") {
-                if (!setServerParameter(currentParameter, storeValue))
-                {
-                    std::string errorMessage = "Cannot set value " + word;
-                    std::vector<std::string>::iterator    it;
-
-                    for (it = storeValue.begin(); it != storeValue.end(); it++)
-                    {
-                        errorMessage = errorMessage + " " + *it;
-                    }
-
-                    errorMessage = errorMessage + " in Parameter :" + currentParameter;
-                    throw(errorMessage);
-                }
-                currentParameter = "";
-                storeValue.clear();
-                index += word.length();
-            } else {
+            currentParameter = "";
+            storeValue.clear();
+            index += word.length();   
+        }
+        else {
+            if (currentParameter == "")
+                currentParameter = word;
+            else
                 storeValue.push_back(word);
-                index += word.length();
-            }
+            index += word.length();
         }
     }
-    storeValue.clear();
     return ;
 }
 
 bool Server::setServerParameter(std::string param, std::vector<std::string> value)
 {
+    /*for (s_iter it = value.begin(); it != value.end(); ++it)
+        std::cout << *it << " ";
+    std::cout << std::endl;*/
     if (param == "host")
     {
         if (value.size() != 1)
@@ -187,20 +128,16 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
         this->_host = ft_pton(value[0]);
         
     } else if (param == "listen") {
-        if (value.size() != 1 || !ft_isdigit(value[0]))
+        if (!ft_isdigit(value[0]))
         {
             return false;
         }
         this->_port = ft_stoi(value[0]);
-        
-    } else if (param == "server_name") {
-        if (value.size() != 1)
-        {
-            return false;
-        }
-        this->_server_name = value[0];
 
+    } else if (param == "server_name") {
+        this->_server_name = value[0];
     } else if (param == "error_page") {
+        
         if (value.size() != 2 || !ft_isdigit(value[0]))
         {
             return false;
@@ -247,8 +184,6 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
         }
         this->_root = value[0];
         
-    } else {
-       return false;
     }
     return true;
 }

@@ -8,3 +8,8 @@ SRCS =	srcs/utils.cpp \
 
 all:
 	c++ -std=c++98 main.cpp ${SRCS} -I includes -o webserv
+
+clean:
+	rm webserv
+
+re: clean all
