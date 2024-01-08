@@ -212,8 +212,7 @@ void    ServerManager::receiveRequest(int read_fd)
     if (rc == 0) {
         std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
         /* TODO: close connection */
-        removeSet(read_fd, _read_fd);
-        removeSet(write_fd, _write_fd);
+        removeSet(read_fd, &_read_fd);
         if (_clients_map.count(read_fd) > 0)
         {
             _clients_map.erase(read_fd);

@@ -1,5 +1,4 @@
 #include "config/Server.hpp"
-#include <unistd.h>
 
 Server::Server() {
     // shouldn't call this function;

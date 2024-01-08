@@ -7,6 +7,10 @@
 # include <sstream>
 # include <sys/socket.h>
 # include <netinet/in.h>
+# include <unistd.h>
+# include <cerrno>
+# include <cstring>
+# include <stdlib.h>
 # include "config/Location.hpp"
 # include "utils.hpp"
 
