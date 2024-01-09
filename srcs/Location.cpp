@@ -86,11 +86,20 @@ void    Location::parseLocation(std::string locationConfig)
         substr_lc = locationConfig.substr(index, locationConfig.length());
         word = findNextWord(substr_lc);
         //std::cout << "currentParameter " << currentParameter << " word = " << word << " index: " << index << std::endl;
-        if (word == "{" || word == "}") {
+        if (currentParameter == "location")
+        {
+            if (word.find("/") != std::string::npos) //parse location _path if '/' is found
+                this->_path = word;
+            else if (word == "{" || word == "}")
+                currentParameter = "";
+            index += word.length();
+        }
+        else if (word == "{" || word == "}") //found bracket on non-location parameter
+        {
             if (currentParameter != "")
                 throw (std::string("location: found \'{\' or \'}\'"));
             index += word.length();
-        } 
+        }
         else if (word == ";") {
             if (currentParameter == "")
                 throw (std::string("location: found \';\' without parameter or statements"));

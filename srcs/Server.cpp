@@ -49,6 +49,7 @@ void    Server::parseServer(std::string serverConfig)
     size_t                      index = 0;
     std::string                 currentParameter = "";
     std::string                 substr_sc;
+    std::string                 loc_block;
     std::string                 word;
     std::vector<std::string>    storeValue;
 
@@ -61,13 +62,13 @@ void    Server::parseServer(std::string serverConfig)
         }
         substr_sc = serverConfig.substr(index, serverConfig.length());
         word = findNextWord(substr_sc);
+        //std::cout << "word = " << word << "\nindex = " << index << std::endl;
         if (word == "location") {
-            currentParameter = "";
-            std::string loc_block = findBlock(substr_sc, "location");
-            index += shiftBlock(substr_sc, "location");
+            loc_block = findBlock(substr_sc, "location", false);
+            //std::cout << "loc_block = " << loc_block << std::endl;
             if (loc_block.length() == 0)
                 throw (std::string("improper location configuration"));
-            Location loc(loc_block, *this); //can't initialize loc, must be editted
+            Location loc(loc_block, *this);
             //loc.printLocationInfo(); //for check only 2b delet
             this->_locations.push_back(loc);
             index += loc_block.length();

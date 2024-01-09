@@ -95,7 +95,7 @@ bool    Config::parseConfig()
         }
 
         std::string content = this->_content.substr(index, this->_content.length());
-        std::string block = findBlock(content ,"server ");
+        std::string block = findBlock(content ,"server ", true);
         index += shiftBlock(content, "server");
         if (block.length() == 0)
         {

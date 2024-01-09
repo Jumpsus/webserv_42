@@ -16,8 +16,8 @@ std::pair<std::string, std::string> parseHeader(std::string req);
 bool                                validateURI(std::string uri);
 void                                trimPrefixSuffixConfig(std::string &input);
 bool                                removeBracket(std::string &src, std::string prefix);
-std::string                         findBlock(std::string src, std::string blockName);
-size_t                              shiftBlock(const std::string& src, std::string blockName);
+std::string                         findBlock(std::string src, const std::string& blockName, bool trim);
+size_t                              shiftBlock(const std::string& src, const std::string& blockName);
 std::string                         findNextWord(std::string src);
 
 bool                                ft_isdigit(const std::string& input);

@@ -196,7 +196,7 @@ void    trimPrefixSuffixConfig(std::string &input)
 }
 
 /* return true when success, return false when fail */
-std::string    findBlock(std::string src, std::string blockName)
+std::string    findBlock(std::string src, const std::string& blockName, bool trim)
 {
     int             count = 0;
     size_t          index = 0, start;
@@ -217,7 +217,7 @@ std::string    findBlock(std::string src, std::string blockName)
     {
         if (src[index] == '{')
         {
-            start = index;
+            trim == true? start = index : start = 0;
             count++;
         }
         index++;
@@ -335,7 +335,7 @@ bool removeBracket(std::string &src, std::string prefix)
     return false;
 }
 
-size_t  shiftBlock(const std::string& src, std::string blockName)
+size_t  shiftBlock(const std::string& src, const std::string& blockName)
 {
     size_t  ret = src.find(blockName);
 
