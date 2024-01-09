@@ -20,9 +20,9 @@ class Config {
         bool            validateConfig();
         std::string     getContent();
         bool            validateContent();
-
         void            printConfigInfo();
-        
+        void            checkDupServer(const Server& ori, const Server& check);
+
     private:
         std::string         _path;
         std::string         _content;

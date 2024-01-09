@@ -15,6 +15,7 @@ class Location {
         ~Location();
 
         void printLocationInfo();
+        const std::string&              getPath() const;
     private:
         std::string                     _path;
         std::string                     _root;

@@ -68,6 +68,11 @@ void    Location::initAllowMethods(bool input)
     _allow_methods["TRACE"] = input;
 }
 
+const std::string& Location::getPath() const
+{
+    return _path;
+}
+
 void    Location::parseLocation(std::string locationConfig)
 {
     size_t                      index = 0;

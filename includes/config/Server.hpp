@@ -30,8 +30,8 @@ class Server {
         std::vector<Location>       getLocations() const;
         std::string                 getRoot() const;
 
-        void printServerInfo();
-
+        void                        printServerInfo();
+        void                        checkDupLocation(const Location& ori, const Location& check);
         
     private:
         unsigned long                   _host;

@@ -69,7 +69,11 @@ void    Server::parseServer(std::string serverConfig)
             if (loc_block.length() == 0)
                 throw (std::string("improper location configuration"));
             Location loc(loc_block, *this);
-            //loc.printLocationInfo(); //for check only 2b delet
+            if (this->_locations.size() > 1)
+            {
+                for (size_t li = 0; li < this->_locations.size(); li++)
+                    checkDupLocation(this->_locations[li], loc);
+            }
             this->_locations.push_back(loc);
             index += loc_block.length();
         }
@@ -250,6 +254,12 @@ size_t                      Server::getClientMaxBodySize() const
 std::string                 Server::getRoot() const
 {
     return this->_root;
+}
+
+void    Server::checkDupLocation(const Location& ori, const Location& check)
+{
+    if (ori.getPath() == check.getPath())
+        throw (std::string("found duplicate location"));
 }
 
 void    Server::printServerInfo()

@@ -102,7 +102,11 @@ bool    Config::parseConfig()
             return false;
         }
         Server serv(block);
-        // serv.printServerInfo();
+        if (this->_servers.size() > 1)
+        {
+            for (size_t si = 0; si < this->_servers.size(); si++)
+                checkDupServer(this->_servers[si], serv);
+        }
         this->_servers.push_back(serv);
         
         index += block.length();
@@ -123,4 +127,11 @@ void Config::printConfigInfo()
     {
         (*it).printServerInfo();
     }
+}
+
+void Config::checkDupServer(const Server& ori, const Server& check)
+{
+    if (ori.getHost() == check.getHost() && ori.getPort() == check.getPort() &&
+        ori.getServerName() == check.getServerName())
+        throw (std::string("found duplicate servers")); 
 }
