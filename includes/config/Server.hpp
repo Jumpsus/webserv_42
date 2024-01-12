@@ -19,6 +19,8 @@ class Server {
         Server &operator=(Server const &serv);
         ~Server();
 
+        int                         getFd();
+        void                        setFd(int sd);
         unsigned long               getHost() const;
         int                         getPort() const;
         std::string                 getServerName() const;
@@ -34,7 +36,7 @@ class Server {
         void                        setServer();
         void                        printServerInfo();
         void                        checkDupLocation(const Location& ori, const Location& check);
-        
+
     private:
         int                             _fd;
         unsigned long                   _host;

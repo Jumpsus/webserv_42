@@ -1,10 +1,14 @@
 #include "config/Server.hpp"
-#include <unistd.h>
+
+Server::Server() {
+    // shouldn't call this function;
+}
 
 Server::Server()
 {
     std::cout << "start Server()" << std::endl;
     /* set default value */
+    _fd = 0;
     _host = 0;
     _port = 80;
     _server_name = "";
@@ -26,6 +30,7 @@ Server::Server(std::string const serverConfig)
 Server::Server(Server const &serv)
 {
     if (this != &serv) {
+        _fd = serv._fd;
         _host = serv._host;
         _port = serv._port;
         _server_name = serv._server_name;
@@ -65,6 +70,7 @@ void    Server::parseServer(std::string serverConfig)
             index++;
             continue;
         }
+
         substr_sc = serverConfig.substr(index, serverConfig.length());
         word = findNextWord(substr_sc);
         //std::cout << "word = " << word << "\nindex = " << index << std::endl;
@@ -201,6 +207,7 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
 Server  &Server::operator=(Server const &serv)
 {
     if (this != &serv) {
+        _fd = serv._fd;
         _host = serv._host;
         _port = serv._port;
         _server_name = serv._server_name;
@@ -219,6 +226,17 @@ Server::~Server()
     _error_page.clear();
     _index.clear();
     _locations.clear();
+}
+
+int                         Server::getFd()
+{
+    return this->_fd;
+}
+
+void                        Server::setFd(int sd)
+{
+    this->_fd = sd;
+    return ;
 }
 
 unsigned long               Server::getHost() const
@@ -277,7 +295,6 @@ void    Server::checkDupLocation(const Location& ori, const Location& check)
     if (ori.getPath() == check.getPath())
         throw (std::string("found duplicate location"));
 }
-
 
 void                        Server::setServer()
 {

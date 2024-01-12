@@ -16,16 +16,14 @@ class Client {
         Client(Client const &cli);
         Client &operator=(Client const &cli);
         ~Client();
-        Request     req;
-        Response    resp;
 
         void    setSocket(int fd);
 
     private:
-        int                 _c_socket_fd;
+        int         _socket_fd;
         Server      _serv;
-        //Request     _req;
-        //Response    _resp;
+        Request     _req;
+        Response    _resp;
 
         std::string _raw_request;
 };

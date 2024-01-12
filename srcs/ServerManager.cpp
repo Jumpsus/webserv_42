@@ -45,8 +45,6 @@ void    ServerManager::setServers()
         for (std::vector<Server>::iterator it2 = this->_servers.begin();
             it2 != it; it2++)
         {
-            /*Server host and port can be the same*/
-            /*so we must make sure it won't run in parallel*/
             if (it2->getPort() == it->getPort() &&
                 it2->getHost() == it->getHost())
             {
@@ -156,7 +154,6 @@ void    ServerManager::acceptConnection(int server_fd)
     socklen_t           client_addr_len = sizeof(client_addr);
     int                 client_fd;
     Client              new_client(_servers_map[server_fd]);
-
     std::cout << "start accept " << std::endl;
     if (!_servers_map.count(server_fd))
     {
@@ -172,7 +169,6 @@ void    ServerManager::acceptConnection(int server_fd)
         }
         return ;
     }
-
     if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
     {
         std::cerr << "fcntl fd " << client_fd << " error : " << std::endl;
@@ -195,6 +191,7 @@ void    ServerManager::acceptConnection(int server_fd)
 
 /* please mark read fd as non-bloacking before use recv() 
    if not recv will block other connection and make server misbehaviour */
+
 void    ServerManager::receiveRequest(int read_fd, Client c)
 {
     std::cout << "start recv " << std::endl;
@@ -267,4 +264,3 @@ void    ServerManager::removeSet(int fd, fd_set* set)
 
     _max_fd = temp_max;
 }
-

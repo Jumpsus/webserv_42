@@ -6,7 +6,7 @@ SRCS =	srcs/utils.cpp \
 		srcs/Cgi.cpp \
 		srcs/Location.cpp \
 		srcs/ServerManager.cpp \
-		srcs/Client.cpp		
+		srcs/Client.cpp
 
 all:
 	c++ -std=c++98 main.cpp ${SRCS} -I includes -o webserv

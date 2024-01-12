@@ -124,7 +124,7 @@ std::string Config::getContent()
     return (this->_content);
 }
 
-std::vector<Server> Config::getServers()
+std::vector<Server>     Config::getServers()
 {
     return (this->_servers);
 }

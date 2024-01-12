@@ -23,14 +23,7 @@ Response::Response(Response const &response)
 
 Response &Response::operator=(Response const &response)
 {
-    _response;
-    _status;
-    _error;
-    _version;
-    _path;
-    _header;
-    _body;
-    return *this;
+    return (*this);
 }
 
 // std::string Response::getResponse()
