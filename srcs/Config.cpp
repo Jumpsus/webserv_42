@@ -24,7 +24,12 @@ Config::Config(Config const &configFile)
     }
 }
 
-Config::~Config() {}
+Config::~Config()
+{
+    this->_content.clear();
+    this->_path.clear();
+    this->_servers.clear();
+}
 
 Config &Config::operator=(Config const &configFile)
 {
@@ -63,7 +68,7 @@ void    Config::readContent()
     config_file.close();
 
     /* remove comment */
-    for (int i = 0; i < temp.length(); i++)
+    for (size_t i = 0; i < temp.length(); i++)
     {
         if (!comment)
         {
@@ -117,6 +122,11 @@ bool    Config::parseConfig()
 std::string Config::getContent()
 {
     return (this->_content);
+}
+
+std::vector<Server> Config::getServers()
+{
+    return (this->_servers);
 }
 
 void Config::printConfigInfo()

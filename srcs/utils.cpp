@@ -42,7 +42,7 @@ std::string splitString(std::string &str, std::string delimeter)
 bool    validateURI(std::string uri){
     char    c;
 
-    for (int i = 0; i < uri.length(); i++)
+    for (size_t i = 0; i < uri.length(); i++)
     {
         c = uri[i];
         if ( c <= ' ' || c == '"' || c == '<' || c == '>' || c == '\\' || 
@@ -73,7 +73,7 @@ int     ft_stoi(const std::string& input)
         return 0;
     }
 
-    for (int i = 0; i < input.length(); i++)
+    for (size_t i = 0; i < input.length(); i++)
     {
         result = result * 10 + input[i] - '0';
     }
@@ -138,7 +138,7 @@ std::string ft_toupper(std::string input)
     std::string res = input;
     int offset = 'A' - 'a';
 
-    for (int i = 0; i < res.length(); i++)
+    for (size_t i = 0; i < res.length(); i++)
     {
         if (res[i] >= 'a' && res[i] <= 'z')
         {
@@ -169,8 +169,8 @@ bool ft_is_white_space(char c)
 /* trim prefix white space ,tab ,line feed ,carriage return and verticle tab */
 void    trimPrefixSuffixConfig(std::string &input)
 {
-    int i = 0;
-    int j = input.length();
+    size_t i = 0;
+    size_t j = input.length();
 
     while (i < input.length())
     {
@@ -254,7 +254,7 @@ std::string    findBlock(std::string src, const std::string& blockName, bool tri
 
 std::string findNextWord(std::string src)
 {
-    int         index = 0;
+    size_t      index = 0;
     std::string des;
 
     /* delimeter in config nginx */
@@ -289,7 +289,7 @@ std::string findNextWord(std::string src)
 bool removeBracket(std::string &src, std::string prefix)
 {
     size_t  found;
-    int     index;
+    size_t  index;
 
     trimPrefixSuffixConfig(src);
     found = src.find(prefix);
@@ -342,7 +342,7 @@ size_t  shiftBlock(const std::string& src, const std::string& blockName)
     if (ret == std::string::npos)
         return 0;
     ret += blockName.length();
-    while (src[ret] < src.length() && src[ret] != '{')
+    while (ret < src.length() && src[ret] != '{')
         ret++;
     return ret;
 }

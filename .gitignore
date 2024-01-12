@@ -2,3 +2,4 @@
 .dSym
 .txt
 ./webserv
+.gitignore

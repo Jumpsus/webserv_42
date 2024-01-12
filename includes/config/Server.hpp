@@ -2,11 +2,10 @@
 # define SERVER_HPP
 
 # include <map>
-# include <vector>
 # include <iostream>
-# include <sstream>
 # include "config/Location.hpp"
 # include "utils.hpp"
+# include "Webserv.hpp"
 
 # define DEFAULT_MAX_BODY_SIZE 1000000;
 
@@ -14,7 +13,7 @@ class Location;
 
 class Server {
     public:
-        // Server();
+        Server();
         Server(std::string const serverConfig);
         Server(Server const &serv);
         Server &operator=(Server const &serv);
@@ -29,11 +28,15 @@ class Server {
         size_t                      getClientMaxBodySize() const;
         std::vector<Location>       getLocations() const;
         std::string                 getRoot() const;
+        int                         getFd();
+        void                        setFd(int sd);
 
+        void                        setServer();
         void                        printServerInfo();
         void                        checkDupLocation(const Location& ori, const Location& check);
         
     private:
+        int                             _fd;
         unsigned long                   _host;
         int                             _port;
         std::string                     _server_name;

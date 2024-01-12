@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include "Request.hpp"
 #include "config/Config.hpp"
+#include "ServerManager.hpp"
 #include <iostream>
 #include <arpa/inet.h>
 
@@ -27,7 +28,8 @@
 
 int main(int ac, char **av)
 {
-    std::string config_path;
+    std::vector<Server> servers;
+    std::string         config_path;
 
     if (ac > 2)
     {
@@ -37,15 +39,23 @@ int main(int ac, char **av)
     ac == 1 ? config_path = "configs/default.conf" : config_path = av[1];
     try 
     {
-        Config c(config_path);
-
-        c.printConfigInfo();
+        Config conf(config_path);
+        //conf.printConfigInfo();
+        servers = conf.getServers();
     }
     catch(std::string error) 
     {  
         std::cout << "error: " << error << std::endl;
     }
-    
+
+    /*for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
+    {
+        it->printServerInfo();
+    }*/
+
+    ServerManager server_manager(servers);
+    server_manager.setServers();
+    server_manager.startServers();
 
     // std::string content = c.getContent();
 

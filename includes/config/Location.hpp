@@ -1,7 +1,8 @@
 #ifndef LOCATION_HPP
 # define LOCATION_HPP
 
-# include <map> 
+# include <map>
+# include <vector>
 # include "config/Server.hpp"
 
 class Server;

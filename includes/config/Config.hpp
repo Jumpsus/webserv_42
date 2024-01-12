@@ -1,10 +1,7 @@
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
-# include <iostream>
 # include <fstream>
-# include <sstream>
-# include <vector>
 # include "config/Server.hpp"
 # include "utils.hpp"
 
@@ -17,11 +14,12 @@ class Config {
         Config &operator=(Config const &conf);
         ~Config();
 
-        bool            validateConfig();
-        std::string     getContent();
-        bool            validateContent();
-        void            printConfigInfo();
-        void            checkDupServer(const Server& ori, const Server& check);
+        bool                validateConfig();
+        std::string         getContent();
+        std::vector<Server> getServers();
+        bool                validateContent();
+        void                printConfigInfo();
+        void                checkDupServer(const Server& ori, const Server& check);
 
     private:
         std::string         _path;
