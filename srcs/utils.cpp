@@ -42,7 +42,7 @@ std::string splitString(std::string &str, std::string delimeter)
 bool    validateURI(std::string uri){
     char    c;
 
-    for (int i = 0; i < uri.length(); i++)
+    for (size_t i = 0; i < uri.length(); i++)
     {
         c = uri[i];
         if ( c <= ' ' || c == '"' || c == '<' || c == '>' || c == '\\' || 
@@ -54,20 +54,17 @@ bool    validateURI(std::string uri){
     return true;
 }
 
-bool    ft_isdigit(std::string input)
+bool    ft_isdigit(const std::string& input) //this declaration is more memory efficient
 {
-    for (int i = 0; i < input.length(); i++)
+    for (std::string::const_iterator it = input.begin() ; it != input.end(); ++it)
     {
-        if (input[i] < '0' || input[i] > '9')
-        {
+        if (!std::isdigit(*it))
             return false;
-        }
     }
-    
-    return true;
+    return  true;
 }
 
-int     ft_stoi(std::string input)
+int     ft_stoi(const std::string& input)
 {
     int     result = 0;
 
@@ -76,45 +73,36 @@ int     ft_stoi(std::string input)
         return 0;
     }
 
-    for (int i = 0; i < input.length(); i++)
+    for (size_t i = 0; i < input.length(); i++)
     {
         result = result * 10 + input[i] - '0';
     }
     return result;
 }
 
-bool    ft_is_valid_host(std::string input)
+bool    ft_is_valid_host(const std::string& input)
 {
     std::string travel = input;
-    std::string tempString = "";
-    int         tempInt = 0;
 
-    for (int i = 0; i < 3; i++)
+    while (1)
     {
-        tempString = splitString(travel, ".");
-        if (tempString == "" || !ft_isdigit(tempString))
-        {
-            return false;
+        size_t  pos = travel.find(".");
+        if (travel.find(".") == std::string::npos) {
+            if (travel == "" || !ft_isdigit(travel))
+                return (false);
+            int tempInt = ft_stoi(travel);
+            if (tempInt > 255 || tempInt < 0)
+                return false;
+            break ;
         }
-
-        tempInt = ft_stoi(tempString);
-        if (tempInt > 255 || tempInt < 0)
-        {
+        std::string token = travel.substr(0, pos);
+        travel = travel.substr(pos + 1, travel.length() - (pos + 1));
+        if (token == "" || !ft_isdigit(token))
             return false;
-        }
+        int         token_int = ft_stoi(token);
+        if (token_int > 255 || token_int < 0)
+            return false;
     }
-
-    if (travel == "" || !ft_isdigit(travel))
-    {
-        return false;
-    }
-
-    tempInt = ft_stoi(travel);
-    if (tempInt > 255 || tempInt < 0)
-    {
-        return false;
-    }
-
     return true;
 }
 
@@ -125,10 +113,10 @@ unsigned long   ft_pton(std::string host)
     int             tempInt[3];
     unsigned long   rtn = 0;
 
-    if (!ft_is_valid_host(host))
+    /*if (!ft_is_valid_host(host))
     {
         return 0;
-    }
+    }*/
 
     for (int i = 0; i < 3; i++)
     {
@@ -150,7 +138,7 @@ std::string ft_toupper(std::string input)
     std::string res = input;
     int offset = 'A' - 'a';
 
-    for (int i = 0; i < res.length(); i++)
+    for (size_t i = 0; i < res.length(); i++)
     {
         if (res[i] >= 'a' && res[i] <= 'z')
         {
@@ -181,8 +169,8 @@ bool ft_is_white_space(char c)
 /* trim prefix white space ,tab ,line feed ,carriage return and verticle tab */
 void    trimPrefixSuffixConfig(std::string &input)
 {
-    int i = 0;
-    int j = input.length();
+    size_t i = 0;
+    size_t j = input.length();
 
     while (i < input.length())
     {
@@ -208,16 +196,17 @@ void    trimPrefixSuffixConfig(std::string &input)
 }
 
 /* return true when success, return false when fail */
-std::string    findBlock(std::string src, std::string blockName)
+std::string    findBlock(std::string src, const std::string& blockName, bool trim)
 {
     int             count = 0;
-    size_t          index = 0;
+    size_t          index = 0, start;
     std::string     des;
+
 
     index = src.find(blockName);
 
-    /* first word isn't "server" */
-    if (index != 0)
+    /* return zero if blockName (e.g. server) not exist in the src */
+    if (index == std::string::npos)
     {
         return des;
     }
@@ -228,6 +217,7 @@ std::string    findBlock(std::string src, std::string blockName)
     {
         if (src[index] == '{')
         {
+            trim == true? start = index : start = 0;
             count++;
         }
         index++;
@@ -237,7 +227,7 @@ std::string    findBlock(std::string src, std::string blockName)
             break;
         }
     }
-
+    //start = index;
     while (index < src.length() && count > 0)
     {
         switch (src[index])
@@ -254,10 +244,9 @@ std::string    findBlock(std::string src, std::string blockName)
                 index++;
         }
     }
-
     if (count == 0)
     {
-        des = src.substr(0, index + 1);
+        des = src.substr(start, index - start);
     }
 
     return des;
@@ -265,7 +254,7 @@ std::string    findBlock(std::string src, std::string blockName)
 
 std::string findNextWord(std::string src)
 {
-    int         index = 0;
+    size_t      index = 0;
     std::string des;
 
     /* delimeter in config nginx */
@@ -300,7 +289,7 @@ std::string findNextWord(std::string src)
 bool removeBracket(std::string &src, std::string prefix)
 {
     size_t  found;
-    int     index;
+    size_t  index;
 
     trimPrefixSuffixConfig(src);
     found = src.find(prefix);
@@ -344,4 +333,16 @@ bool removeBracket(std::string &src, std::string prefix)
         }
     }
     return false;
+}
+
+size_t  shiftBlock(const std::string& src, const std::string& blockName)
+{
+    size_t  ret = src.find(blockName);
+
+    if (ret == std::string::npos)
+        return 0;
+    ret += blockName.length();
+    while (ret < src.length() && src[ret] != '{')
+        ret++;
+    return ret;
 }

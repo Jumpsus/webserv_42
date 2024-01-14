@@ -10,6 +10,9 @@ Config::Config(std::string const configPath)
 
     std::cout << "parse Config()" << std::endl;
     this->parseConfig();
+
+    if (this->_servers.size() == 0)
+        throw(std::string("can't build server"));
 }
 
 Config::Config(Config const &configFile)
@@ -21,7 +24,12 @@ Config::Config(Config const &configFile)
     }
 }
 
-Config::~Config() {}
+Config::~Config()
+{
+    this->_content.clear();
+    this->_path.clear();
+    this->_servers.clear();
+}
 
 Config &Config::operator=(Config const &configFile)
 {
@@ -60,7 +68,7 @@ void    Config::readContent()
     config_file.close();
 
     /* remove comment */
-    for (int i = 0; i < temp.length(); i++)
+    for (size_t i = 0; i < temp.length(); i++)
     {
         if (!comment)
         {
@@ -82,8 +90,7 @@ void    Config::readContent()
 bool    Config::parseConfig()
 {
     std::string content = this->_content;
-
-    int index = 0;
+    size_t index = 0;
 
     while (index < content.length())
     {
@@ -92,15 +99,21 @@ bool    Config::parseConfig()
             index++;
         }
 
-        std::string block = findBlock(content.substr(index, content.length()) ,"server");
+        std::string content = this->_content.substr(index, this->_content.length());
+        std::string block = findBlock(content ,"server ", true);
+        index += shiftBlock(content, "server");
         if (block.length() == 0)
         {
             return false;
         }
-    
         Server serv(block);
+        if (this->_servers.size() > 1)
+        {
+            for (size_t si = 0; si < this->_servers.size(); si++)
+                checkDupServer(this->_servers[si], serv);
+        }
         this->_servers.push_back(serv);
-
+        
         index += block.length();
     }
     return true;
@@ -124,4 +137,11 @@ void Config::printConfigInfo()
     {
         (*it).printServerInfo();
     }
+}
+
+void Config::checkDupServer(const Server& ori, const Server& check)
+{
+    if (ori.getHost() == check.getHost() && ori.getPort() == check.getPort() &&
+        ori.getServerName() == check.getServerName())
+        throw (std::string("found duplicate servers")); 
 }

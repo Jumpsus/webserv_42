@@ -4,7 +4,7 @@ Server::Server() {
     // shouldn't call this function;
 }
 
-Server::Server(std::string const serverConfig)
+Server::Server()
 {
     std::cout << "start Server()" << std::endl;
     /* set default value */
@@ -15,9 +15,16 @@ Server::Server(std::string const serverConfig)
     _client_max_body_size = DEFAULT_MAX_BODY_SIZE; //1MB
     _autoindex = true;
     _root = "";
+    initErrorPage();
+}
 
+Server::Server(std::string const serverConfig)
+{
+    std::cout << "start Server()" << std::endl;
     initErrorPage();
     parseServer(serverConfig);
+    if (_locations.size() == 0)
+        throw (std::string("location not declared in server"));
 }
 
 Server::Server(Server const &serv)
@@ -49,10 +56,11 @@ void    Server::initErrorPage()
 
 void    Server::parseServer(std::string serverConfig)
 {
-    int                         index = 0;
-    bool                        inBracket = false;
+    size_t                      index = 0;
+    std::string                 currentParameter = "";
+    std::string                 substr_sc;
+    std::string                 loc_block;
     std::string                 word;
-    std::string                 currentParameter;
     std::vector<std::string>    storeValue;
 
     while (index < serverConfig.length())
@@ -63,86 +71,59 @@ void    Server::parseServer(std::string serverConfig)
             continue;
         }
 
-        word = findNextWord(serverConfig.substr(index, serverConfig.length()));
-        if (currentParameter == "")
-        {
-            if (word == "server")
+        substr_sc = serverConfig.substr(index, serverConfig.length());
+        word = findNextWord(substr_sc);
+        //std::cout << "word = " << word << "\nindex = " << index << std::endl;
+        if (word == "location") {
+            loc_block = findBlock(substr_sc, "location", false);
+            //std::cout << "loc_block = " << loc_block << std::endl;
+            if (loc_block.length() == 0)
+                throw (std::string("improper location configuration"));
+            Location loc(loc_block, *this);
+            if (this->_locations.size() > 1)
             {
-                if (inBracket)
-                {
-                    std::string errorMessage = "Invalid syntax found server inside server" ;
-                    storeValue.clear();
-                    std::cout << errorMessage << std::endl;
-                    throw(errorMessage);
-                }
-                currentParameter = word;
-                index += word.length();
-            } else if (word == "location") {
-                std::string block = findBlock(serverConfig.substr(index, serverConfig.length()) ,"location");
-                if (block.length() == 0)
-                {
-                    std::string errorMessage = "Invalid syntax found on location Block" ;
-                    storeValue.clear();
-                    throw(errorMessage);
-                }
-
-                Location loc(block, *this);
-                // loc.printLocationInfo();
-                this->_locations.push_back(loc);
-                index += block.length();
-            } else if (word == "}") {
-                if (!inBracket)
-                {
-                    std::string errorMessage = "Invalid syntax found no scope before }" ;
-                    storeValue.clear();
-                    throw(errorMessage);
-                }
-                inBracket = false;
-                index += word.length();
-            } else {
-                currentParameter = word;
-                index += word.length();
+                for (size_t li = 0; li < this->_locations.size(); li++)
+                    checkDupLocation(this->_locations[li], loc);
             }
-        } else {
-            if (word == "{") { 
-                if (currentParameter == "server") {
-                    inBracket = true;
-                    storeValue.clear();
-                    currentParameter = "";
-                } else {
-                    std::string errorMessage = "Invalid syntax: Found \'{\' in wrong place after ", currentParameter ;
-                    throw(errorMessage);
-                }
-                    index += word.length();
-            } else if (word == ";") {
-                if (!setServerParameter(currentParameter, storeValue))
-                {
-                    std::string errorMessage = "Cannot set value " + word;
-                    std::vector<std::string>::iterator    it;
-
-                    for (it = storeValue.begin(); it != storeValue.end(); it++)
-                    {
-                        errorMessage = errorMessage + " " + *it;
-                    }
-
-                    errorMessage = errorMessage + " in Parameter :" + currentParameter;
-                    throw(errorMessage);
-                }
-                currentParameter = "";
-                storeValue.clear();
-                index += word.length();
-            } else {
+            this->_locations.push_back(loc);
+            index += loc_block.length();
+        }
+        else if (word == "{") {
+            if (currentParameter != "") //since "location" has been handled by above block
+                throw (std::string("server: found \'{\' in wrong place after " + currentParameter));
+            index += word.length();
+        }
+        else if (word == ";") {
+            if (currentParameter == "")
+                throw (std::string("server: found \';\' without parameter or statements"));
+            if (!setServerParameter(currentParameter, storeValue))
+            {
+                std::string errorMessage = "Cannot set value ";
+                for (s_iter it = storeValue.begin(); it != storeValue.end(); ++it)
+                    errorMessage += " " + *it;
+                errorMessage += " in parameter " + currentParameter;
+                throw(errorMessage);
+            }
+            currentParameter = "";
+            storeValue.clear();
+            index += word.length();   
+        }
+        else {
+            if (currentParameter == "")
+                currentParameter = word;
+            else
                 storeValue.push_back(word);
-                index += word.length();
-            }
+            index += word.length();
         }
     }
-    storeValue.clear();
     return ;
 }
 
 bool Server::setServerParameter(std::string param, std::vector<std::string> value)
 {
+    /*for (s_iter it = value.begin(); it != value.end(); ++it)
+        std::cout << *it << " ";
+    std::cout << std::endl;*/
     if (param == "host")
     {
         if (value.size() != 1)
@@ -163,20 +144,16 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
         this->_host = ft_pton(value[0]);
         
     } else if (param == "listen") {
-        if (value.size() != 1 || !ft_isdigit(value[0]))
+        if (!ft_isdigit(value[0]))
         {
             return false;
         }
         this->_port = ft_stoi(value[0]);
-        
-    } else if (param == "server_name") {
-        if (value.size() != 1)
-        {
-            return false;
-        }
-        this->_server_name = value[0];
 
+    } else if (param == "server_name") {
+        this->_server_name = value[0];
     } else if (param == "error_page") {
+        
         if (value.size() != 2 || !ft_isdigit(value[0]))
         {
             return false;
@@ -223,8 +200,6 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
         }
         this->_root = value[0];
         
-    } else {
-       return false;
     }
     return true;
 }
@@ -304,36 +279,73 @@ std::string                 Server::getRoot() const
     return this->_root;
 }
 
+int                         Server::getFd()
+{
+    return this->_fd;
+}
+
+void                        Server::setFd(int sd)
+{
+    this->_fd = sd;
+    return ;
+}
+
+void    Server::checkDupLocation(const Location& ori, const Location& check)
+{
+    if (ori.getPath() == check.getPath())
+        throw (std::string("found duplicate location"));
+}
+
 void                        Server::setServer()
 {
     struct sockaddr_in addr;
 
-    _fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (_fd < 0)
-    {
-        std::cerr << "init socket error " << std::endl;
-        exit(-1);
+    /*(Non Linux/BSD)Create an AF_INET6 stream socket to receive incoming connections on*/
+    if (!strcmp(OS, "other")) {
+        //std::cout << socket(AF_INET, SOCK_STREAM, 0) << std::endl;
+        if ( (_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        {
+            std::cerr << "init socket error " << std::endl;
+            exit(-1);
+        }
     }
-
+    /*(Linux/BSD)Direclty create an AF_INET6 socket in non-blocking mode
+    please read https://man7.org/linux/man-pages/man2/socket.2.html for more information*/
+    else {
+        if ( (_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)) < 0)
+        {
+            std::cerr << "init socket error " << std::endl;
+            exit(-1);
+        }
+    }
+    /*Allow socket descriptor to be reuseable*/
     int option = 1;
-    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&option, sizeof(option))) {
+    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&option, sizeof(option))< 0) {
         std::cerr << "set sock opt fail :" << errno << std::endl;
         close(_fd);
         exit(-1);
     }
-
+    /*ioctl the socket to nonblocking (if OS is not Linux/BSD)*/
+    if (!strcmp(OS, "other")) {
+            if (fcntl(_fd, F_SETFL, O_NONBLOCK) < 0) {
+                std::cerr << "fcntl fd " << _fd << " error : " << std::endl;
+                close(_fd);
+                exit (-1);
+            }
+        }
+    /*bind the socket*/
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = this->_host;
     addr.sin_port = htons(this->_port);
 
-    if (bind(_fd, (struct sockaddr*) &addr, sizeof(addr))) {
+    if (bind(_fd, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
         std::cerr << "bind error: " << errno << std::endl;
         close(_fd);
         exit(-1);
     }
 
-    return ;
+    //return ;
 }
 
 void    Server::printServerInfo()

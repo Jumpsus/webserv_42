@@ -5,13 +5,7 @@
 # define CONNECTION_TIMEOUT 30
 # define CLIENT_BUFFER 1
 
-# include <vector>
-# include <fcntl.h>
-# include <unistd.h>
-# include <sys/select.h>
-# include <sys/socket.h>
-# include <cerrno>
-# include <cstring>
+# include "Webserv.hpp"
 # include "config/Server.hpp"
 # include "Client.hpp"
 
@@ -40,8 +34,8 @@ class ServerManager {
 
         void                    startlisten();
         void                    acceptConnection(int server_fd);
-        void                    receiveRequest(int read_fd);
-        void                    closeConnection();
+        void                    receiveRequest(int read_fd, Client c);
+        void                    closeConnection(const int i);
         void                    addSet(int fd, fd_set* set);
         void                    removeSet(int fd, fd_set* set);           
 };

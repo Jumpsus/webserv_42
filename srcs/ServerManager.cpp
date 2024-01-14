@@ -100,7 +100,7 @@ void    ServerManager::startServers()
                 std::cout << "accept "<< std::endl;
                 acceptConnection(i);
             } else if (FD_ISSET(i, &current_read)) {
-                receiveRequest(i);
+                receiveRequest(i, _clients_map[i]);
                 ready--;
             } else if (FD_ISSET(i, &current_write)) {
                 // ready--;
@@ -120,18 +120,20 @@ void    ServerManager::startlisten()
 
     for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); it++)
     {
+        /*set the listen back log*/
         if (listen(it->getFd(), MAX_CONNECTION) < 0)
         {
             std::cerr << "listen fd " << it->getFd() << " error : " << std::endl;
             exit (-1);
         }
-
-        if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0)
-        {
-            std::cerr << "fcntl fd " << it->getFd() << " error : " << std::endl;
-            exit (-1);
-        }
-
+        /*(Non Linux/BSD)Make socket non_blocking*/
+        /*For Linux/BSD, the sockets are already set as non-blocking via SOCK_NONBLOCK
+        if (!strcmp(OS, "other")) {
+            if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
+                std::cerr << "fcntl fd " << it->getFd() << " error : " << std::endl;
+                exit (-1);
+            }
+        }*/
         if (!_servers_map.count(it->getFd()))
         {
             _servers_map.insert(std::pair<int, Server>(it->getFd(), *it));
@@ -141,22 +143,25 @@ void    ServerManager::startlisten()
         this->addSet(it->getFd(), &_server_fd);
         this->addSet(it->getFd(), &_read_fd);
     }
+    _max_fd = _servers.back().getFd();
 }
 
 /* please mark server socket as non-bloacking before use accept() 
    if not accept will block other connection and make server misbehaviour */
 void    ServerManager::acceptConnection(int server_fd)
 {
+    struct sockaddr_in  client_addr;
+    socklen_t           client_addr_len = sizeof(client_addr);
+    int                 client_fd;
+    Client              new_client(_servers_map[server_fd]);
     std::cout << "start accept " << std::endl;
     if (!_servers_map.count(server_fd))
     {
         std::cerr << "could not found server map for fd : " << server_fd << std::endl;
         exit(-1);
     }
-
-    int new_fd = accept(server_fd, NULL, NULL);
-
-    if (new_fd < 0)
+    client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
+    if (client_fd < 0)
     {
         if (errno != EWOULDBLOCK)
         {
@@ -164,29 +169,30 @@ void    ServerManager::acceptConnection(int server_fd)
         }
         return ;
     }
-
-    if (fcntl(new_fd, F_SETFL, O_NONBLOCK) < 0)
+    if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
     {
-        std::cerr << "fcntl fd " << new_fd << " error : " << std::endl;
-        close(new_fd);
+        std::cerr << "fcntl fd " << client_fd << " error : " << std::endl;
+        removeSet(client_fd, &_read_fd);
+        close(client_fd);
         return ;
     }
-
-    if (_clients_map.count(new_fd) > 0)
+    new_client.setSocket(client_fd);
+    if (_clients_map.count(client_fd) > 0)
     {
-        _clients_map.erase(new_fd);
+        _clients_map.erase(client_fd);
     }
 
-    _clients_map.insert(std::pair<int, Client>(new_fd, Client(_servers_map[server_fd])));
+    _clients_map.insert(std::pair<int, Client>(client_fd, new_client));
 
-    addSet(new_fd, &_read_fd);
+    addSet(client_fd, &_read_fd);
 
-    std::cout << "got new fd: "<< new_fd << std::endl;
+    std::cout << "got new fd: "<< client_fd << std::endl;
 }
 
 /* please mark read fd as non-bloacking before use recv() 
    if not recv will block other connection and make server misbehaviour */
-void    ServerManager::receiveRequest(int read_fd)
+
+void    ServerManager::receiveRequest(int read_fd, Client c)
 {
     std::cout << "start recv " << std::endl;
     char buffer[CLIENT_BUFFER];
@@ -196,6 +202,7 @@ void    ServerManager::receiveRequest(int read_fd)
 
     if (rc < 0) {
         std::cerr << "[Crash] error recv:" << errno << "end server now" << std::endl;
+        closeConnection(rc);
         return ;
     }
 
@@ -211,14 +218,17 @@ void    ServerManager::receiveRequest(int read_fd)
     /* Client send close connection */
     if (rc == 0) {
         std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
-        /* TODO: close connection */
-        removeSet(read_fd, &_read_fd);
-        if (_clients_map.count(read_fd) > 0)
-        {
-            _clients_map.erase(read_fd);
-        }
-        close (read_fd);
+        closeConnection(rc);
     }
+}
+
+void    ServerManager::closeConnection(const int i)
+{
+    removeSet(i, &_write_fd);
+    removeSet(i, &_read_fd);
+    if (_clients_map.count(i) > 0)
+        _clients_map.erase(i);
+    close(i);
 }
 
 void    ServerManager::addSet(int fd, fd_set* set)

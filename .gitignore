@@ -1,2 +1,8 @@
+
+.vscode
+.dSym
+.txt
+./webserv
+.gitignore
 /delete
 gitpassword

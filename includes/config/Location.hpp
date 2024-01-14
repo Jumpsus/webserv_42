@@ -1,7 +1,8 @@
 #ifndef LOCATION_HPP
 # define LOCATION_HPP
 
-# include <map> 
+# include <map>
+# include <vector>
 # include "config/Server.hpp"
 
 class Server;
@@ -15,6 +16,7 @@ class Location {
         ~Location();
 
         void printLocationInfo();
+        const std::string&              getPath() const;
     private:
         std::string                     _path;
         std::string                     _root;

@@ -16,6 +16,16 @@
     [ message-body ]
 */
 
+enum HttpMethods
+{
+    GET,
+    HEAD,
+    POST,
+    PUT,
+    DELETE,
+    NONE
+};
+
 class Request {
     public:
         Request();
@@ -45,6 +55,7 @@ class Request {
         std::map<std::string, std::string>  _header;
         std::string                         _body;
         std::string                         _method;
+        //HttpMethods                         _method;
         std::string                         _path;
         std::string                         _query;
         std::string                         _fragment;
