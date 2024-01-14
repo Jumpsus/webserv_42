@@ -4,18 +4,18 @@
 std::pair<std::string, std::string> parseHeader(std::string req)
 {
     std::size_t found;
-    std::string first;
-    std::string second;
+    std::string first = req;
+    std::string second = "";
 
     found = req.find(':');
 
     if (found != std::string::npos)
     {
-        first = req.substr(0, found);
+        first = ft_tolower(req.substr(0, found));
 
         if (req.length() != found)
         {
-            second = req.substr(found + 1, req.length());
+            second = ft_trimspace(req.substr(found + 1, req.length()));
         }
     }
 
@@ -67,6 +67,21 @@ bool    ft_isdigit(std::string input)
     return true;
 }
 
+// accept only lower case
+bool    ft_ishex(std::string input)
+{
+    for (int i = 0; i < input.length(); i++)
+    {
+        if ((input[i] >= '0' && input[i] <= '9') || 
+            (input[i] >= 'a' && input[i] <= 'f'))
+        {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 int     ft_stoi(std::string input)
 {
     int     result = 0;
@@ -79,6 +94,29 @@ int     ft_stoi(std::string input)
     for (int i = 0; i < input.length(); i++)
     {
         result = result * 10 + input[i] - '0';
+    }
+    return result;
+}
+
+int     ft_htoi(std::string input)
+{
+    int     result = 0;
+    int     temp_val = 0;
+
+    if (!ft_ishex(input))
+    {
+        return 0;
+    }
+
+    for (int i = 0; i < input.length(); i++)
+    {
+        if (input[i] >= '0' && input[i] < '9')
+        {
+            temp_val = input[i] - '0';
+        } else if (input[i] >= 'a' && input[i] < 'f') {
+            temp_val = input[i] - 'a' + 10;
+        }
+        result = result * 16 + temp_val;
     }
     return result;
 }
@@ -155,6 +193,21 @@ std::string ft_toupper(std::string input)
         if (res[i] >= 'a' && res[i] <= 'z')
         {
             res[i] = res[i] + offset;
+        }
+    }
+    return (res);
+}
+
+std::string ft_tolower(std::string input)
+{
+    std::string res = input;
+    int offset = 'A' - 'a';
+
+    for (int i = 0; i < res.length(); i++)
+    {
+        if (res[i] >= 'A' && res[i] <= 'Z')
+        {
+            res[i] = res[i] - offset;
         }
     }
     return (res);
@@ -344,4 +397,15 @@ bool removeBracket(std::string &src, std::string prefix)
         }
     }
     return false;
+}
+
+std::string ft_trimspace(std::string input)
+{
+    int i = 0;
+
+    while (input[i] == ' ')
+    {
+        i++;
+    }
+    return (input.substr(i, input.length()));
 }

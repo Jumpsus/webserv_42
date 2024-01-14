@@ -24,6 +24,7 @@ class Request {
 
         Request &operator=(Request const &req);
 
+        bool                                isCompleted();
         bool                                parseRequest(std::string req);
         
         std::string                         getMethod();
@@ -42,8 +43,11 @@ class Request {
         void                                printRequest();
 
     private:
+        bool                                _completed;
         std::map<std::string, std::string>  _header;
         std::string                         _body;
+        std::string                         _body_type;
+        size_t                              _body_length;
         std::string                         _method;
         std::string                         _path;
         std::string                         _query;
@@ -53,6 +57,8 @@ class Request {
         std::string                         _protocol_version;
         std::string                         _connection;
         int                                 _error;
+
+        bool                                handleChunked(std::string body);
 };
 
 #endif

@@ -17,11 +17,15 @@ std::string                         findBlock(std::string src, std::string block
 std::string                         findNextWord(std::string src);
 
 bool                                ft_isdigit(std::string input);
+bool                                ft_ishex(std::string input);
 int                                 ft_stoi(std::string input);
+int                                 ft_htoi(std::string input);
 bool                                ft_is_valid_host(std::string input);
 unsigned long                       ft_pton(std::string host);
 std::string                         ft_toupper(std::string input);
+std::string                         ft_tolower(std::string input);
 std::string                         ft_to_string(size_t num);
 bool                                ft_is_white_space(char c);
+std::string                         ft_trimspace(std::string input);
 
 #endif

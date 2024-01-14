@@ -189,7 +189,7 @@ void    ServerManager::acceptConnection(int server_fd)
 void    ServerManager::receiveRequest(int read_fd)
 {
     std::cout << "start recv " << std::endl;
-    char buffer[CLIENT_BUFFER];
+    char buffer[1];
 
     /* After recv fd is set not ready for read until Client cancelled connection */
     int rc = recv(read_fd, buffer, sizeof(buffer), 0);
@@ -200,10 +200,12 @@ void    ServerManager::receiveRequest(int read_fd)
     }
 
     if (rc > 0) {
-        /* TODO: feed request to client */
-        /* TODO: parse request process client */
-        std::string feed(buffer);
-        std::cout << feed << std::endl;
+        std::string req(buffer);
+        if (_clients_map[read_fd].feed(req))
+        {
+            removeSet(read_fd, &_read_fd);
+            // addSet(read_fd, &_write_fd);
+        }
         memset(buffer, 0, sizeof(buffer));
         return ;
     }
@@ -211,13 +213,7 @@ void    ServerManager::receiveRequest(int read_fd)
     /* Client send close connection */
     if (rc == 0) {
         std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
-        /* TODO: close connection */
-        removeSet(read_fd, &_read_fd);
-        if (_clients_map.count(read_fd) > 0)
-        {
-            _clients_map.erase(read_fd);
-        }
-        close (read_fd);
+        closeConnection(read_fd);
     }
 }
 
@@ -253,4 +249,25 @@ void    ServerManager::removeSet(int fd, fd_set* set)
     }
 
     _max_fd = temp_max;
+}
+
+void    ServerManager::closeConnection(int fd)
+{
+    if (FD_ISSET(fd, &_server_fd))
+    {
+        removeSet(fd, &_server_fd);
+    }
+
+    if (FD_ISSET(fd, &_read_fd))
+    {
+        removeSet(fd, &_read_fd);
+    }
+
+    if (FD_ISSET(fd, &_write_fd))
+    {
+        removeSet(fd, &_write_fd);
+    }
+
+    close(fd);
+    _clients_map.erase(fd);
 }
