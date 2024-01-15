@@ -200,15 +200,17 @@ void    ServerManager::receiveRequest(int read_fd, Client c)
 
     if (rc < 0) {
         std::cerr << "[Crash] error recv:" << errno << "end server now" << std::endl;
-        closeConnection(rc);
+        closeConnection(read_fd);
         return ;
     }
 
     if (rc > 0) {
-        /* TODO: feed request to client */
-        /* TODO: parse request process client */
-        std::string feed(buffer);
-        std::cout << feed << std::endl;
+        std::string req(buffer);
+        if (_clients_map[read_fd].feed(req, rc))
+        {
+            removeSet(read_fd, &_read_fd);
+            // addSet(read_fd, &_write_fd);
+        }
         memset(buffer, 0, sizeof(buffer));
         return ;
     }
@@ -216,17 +218,8 @@ void    ServerManager::receiveRequest(int read_fd, Client c)
     /* Client send close connection */
     if (rc == 0) {
         std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
-        closeConnection(rc);
+        closeConnection(read_fd);
     }
-}
-
-void    ServerManager::closeConnection(const int i)
-{
-    removeSet(i, &_write_fd);
-    removeSet(i, &_read_fd);
-    if (_clients_map.count(i) > 0)
-        _clients_map.erase(i);
-    close(i);
 }
 
 void    ServerManager::addSet(int fd, fd_set* set)
@@ -261,4 +254,25 @@ void    ServerManager::removeSet(int fd, fd_set* set)
     }
 
     _max_fd = temp_max;
+}
+
+void    ServerManager::closeConnection(int fd)
+{
+    if (FD_ISSET(fd, &_server_fd))
+    {
+        removeSet(fd, &_server_fd);
+    }
+
+    if (FD_ISSET(fd, &_read_fd))
+    {
+        removeSet(fd, &_read_fd);
+    }
+
+    if (FD_ISSET(fd, &_write_fd))
+    {
+        removeSet(fd, &_write_fd);
+    }
+
+    close(fd);
+    _clients_map.erase(fd);
 }
