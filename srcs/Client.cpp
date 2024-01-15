@@ -35,9 +35,9 @@ void    Client::setSocket(int fd) {
     _socket_fd = fd;
 }
 
-bool    Client::feed(std::string input)
+bool    Client::feed(std::string input, size_t len)
 {
-    _raw_request = _raw_request + input.substr(0, input.length() - 1);
+    _raw_request = _raw_request + input.substr(0, len);
 
     std::cout << "input = " << input << std::endl;
     std::cout << "len = " << input.length() << std::endl;

@@ -18,7 +18,7 @@ class Client {
         ~Client();
 
         void    setSocket(int fd);
-        bool    feed(std::string input); // return true when request is complete
+        bool    feed(std::string input, size_t len); // return true when request is complete
 
     private:
         int                 _socket_fd;

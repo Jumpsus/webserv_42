@@ -189,7 +189,7 @@ void    ServerManager::acceptConnection(int server_fd)
 void    ServerManager::receiveRequest(int read_fd)
 {
     std::cout << "start recv " << std::endl;
-    char buffer[1];
+    char buffer[CLIENT_BUFFER];
 
     /* After recv fd is set not ready for read until Client cancelled connection */
     int rc = recv(read_fd, buffer, sizeof(buffer), 0);
@@ -201,7 +201,7 @@ void    ServerManager::receiveRequest(int read_fd)
 
     if (rc > 0) {
         std::string req(buffer);
-        if (_clients_map[read_fd].feed(req))
+        if (_clients_map[read_fd].feed(req, rc))
         {
             removeSet(read_fd, &_read_fd);
             // addSet(read_fd, &_write_fd);
