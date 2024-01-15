@@ -126,14 +126,12 @@ void    ServerManager::startlisten()
             std::cerr << "listen fd " << it->getFd() << " error : " << std::endl;
             exit (-1);
         }
-        /*(Non Linux/BSD)Make socket non_blocking*/
-        /*For Linux/BSD, the sockets are already set as non-blocking via SOCK_NONBLOCK
-        if (!strcmp(OS, "other")) {
-            if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
-                std::cerr << "fcntl fd " << it->getFd() << " error : " << std::endl;
-                exit (-1);
-            }
-        }*/
+
+        if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
+            std::cerr << "fcntl fd " << it->getFd() << " error : " << std::endl;
+            exit (-1);
+        }
+        
         if (!_servers_map.count(it->getFd()))
         {
             _servers_map.insert(std::pair<int, Server>(it->getFd(), *it));
@@ -202,15 +200,17 @@ void    ServerManager::receiveRequest(int read_fd, Client c)
 
     if (rc < 0) {
         std::cerr << "[Crash] error recv:" << errno << "end server now" << std::endl;
-        closeConnection(rc);
+        closeConnection(read_fd);
         return ;
     }
 
     if (rc > 0) {
-        /* TODO: feed request to client */
-        /* TODO: parse request process client */
-        std::string feed(buffer);
-        std::cout << feed << std::endl;
+        std::string req(buffer);
+        if (_clients_map[read_fd].feed(req, rc))
+        {
+            removeSet(read_fd, &_read_fd);
+            // addSet(read_fd, &_write_fd);
+        }
         memset(buffer, 0, sizeof(buffer));
         return ;
     }
@@ -218,17 +218,8 @@ void    ServerManager::receiveRequest(int read_fd, Client c)
     /* Client send close connection */
     if (rc == 0) {
         std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
-        closeConnection(rc);
+        closeConnection(read_fd);
     }
-}
-
-void    ServerManager::closeConnection(const int i)
-{
-    removeSet(i, &_write_fd);
-    removeSet(i, &_read_fd);
-    if (_clients_map.count(i) > 0)
-        _clients_map.erase(i);
-    close(i);
 }
 
 void    ServerManager::addSet(int fd, fd_set* set)
@@ -263,4 +254,25 @@ void    ServerManager::removeSet(int fd, fd_set* set)
     }
 
     _max_fd = temp_max;
+}
+
+void    ServerManager::closeConnection(int fd)
+{
+    if (FD_ISSET(fd, &_server_fd))
+    {
+        removeSet(fd, &_server_fd);
+    }
+
+    if (FD_ISSET(fd, &_read_fd))
+    {
+        removeSet(fd, &_read_fd);
+    }
+
+    if (FD_ISSET(fd, &_write_fd))
+    {
+        removeSet(fd, &_write_fd);
+    }
+
+    close(fd);
+    _clients_map.erase(fd);
 }

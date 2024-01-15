@@ -30,8 +30,6 @@ class Server {
         size_t                      getClientMaxBodySize() const;
         std::vector<Location>       getLocations() const;
         std::string                 getRoot() const;
-        int                         getFd();
-        void                        setFd(int sd);
 
         void                        setServer();
         void                        printServerInfo();

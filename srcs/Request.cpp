@@ -3,6 +3,8 @@
 Request::Request()
 {
     _body = "";
+    _body_type = "";
+    _body_length = 0;
     _method = "";
     _path = "";
     _query = "";
@@ -12,6 +14,7 @@ Request::Request()
     _protocol_version = "";
     _connection = "";
     _error = 0;
+    _completed = false;
 }
 
 Request::Request(Request const &req)
@@ -19,6 +22,8 @@ Request::Request(Request const &req)
     if (this != &req)
     {
         this->_body = req._body;
+        this->_body_type = req._body_type;
+        this->_body_length = req._body_length;
         this->_method = req._method;
         this->_path = req._path;
         this->_query = req._query;
@@ -29,6 +34,7 @@ Request::Request(Request const &req)
         this->_connection = req._connection;
         this->_error = req._error;
         this->_header = req._header;
+        this->_completed = req._completed;
     }
 }
 
@@ -42,6 +48,8 @@ Request& Request::operator=(Request const &req)
     if (this != &req)
     {
         this->_body = req._body;
+        this->_body_type = req._body_type;
+        this->_body_length = req._body_length;
         this->_method = req._method;
         this->_path = req._path;
         this->_query = req._query;
@@ -52,25 +60,34 @@ Request& Request::operator=(Request const &req)
         this->_connection = req._connection;
         this->_error = req._error;
         this->_header = req._header;
+        this->_completed = req._completed;
     }
 
     return (*this);
 }
 
+bool    Request::isCompleted()
+{
+    return (this->_completed);
+}
+
 /* https://www.rfc-editor.org/rfc/rfc7230.html#section-3 */
+/* return true case parse completed , false case parse incomplete */
 bool    Request::parseRequest(std::string req)
 {
     std::string                         buffer;
     std::string                         line;
     std::size_t                         found;
     std::pair<std::string, std::string> tempHeader;
+    bool                                completed_header = false;
 
+    std::cout << "req = " << req << std::endl;
     /* handle request-line (3.1.1) 
        method SP request-target SP HTTP-version CRLF */
     found = req.find("\r\n");
     if (found == std::string::npos)
     {
-        this->setError(400);
+        this->_completed = false;
         return false;
     }
     line = req.substr(0, found);
@@ -81,34 +98,175 @@ bool    Request::parseRequest(std::string req)
 
     if (this->_error != 0)
     {
-        return false;
+        this->_completed = true;
+        return true;
     }
 
     buffer = req.substr(found + 2, req.length());
 
     /* handle header-field (3.2) */
-    while (buffer.length() > 0)
-    {
+
+    do {
         found = buffer.find("\r\n");
         if (found == std::string::npos)
         {
-            this->setError(400);
+            this->_completed = false;
             return false;
         }
         if (found == 0)
         {
             buffer = buffer.substr(found + 2, buffer.length());
+            completed_header = true;
             break;
         }
         line = buffer.substr(0, found);
         tempHeader = parseHeader(line);
-        // std::cout << "line= " << line << ", first= " << tempHeader.first << ", second= " << tempHeader.second << std::endl;
+        
+        /* case invalid header key */
+        if (tempHeader.first == "")
+        {
+            this->setError(400);
+            this->_completed = true;
+            return true;
+        }
         this->_header.insert(tempHeader);
         buffer = buffer.substr(found + 2, buffer.length());
+    } while (buffer.length() > 0);
+
+    if (!completed_header)
+    {
+        this->_completed = false;
+        return false;
     }
 
     /* handle message-body (3.3) */
-    this->_body = buffer;
+    if (_header.count("content-length") > 0)
+    {
+        if (!ft_isdigit(_header["content-length"]))
+        {
+            std::cout << "content-length is not digit " <<  _header["content-length"] <<std::endl;
+            for (int i = 0; i < _header["content-length"].length(); i++)
+            {
+                int x = _header["content-length"][i];
+                std::cout << x << " " << std::endl;
+            }
+            this->setError(400);
+            this->_completed = true;
+            return true;
+        }
+        _body_length = ft_stoi(_header["content-length"]);
+        _body_type = "body";
+    }
+
+    if (_header.count("transfer-encoding") > 0)
+    {
+        _body_type = "body";
+        if (_header["transfer-encoding"].find("chuncked") != std::string::npos)
+        {
+            /* in chucked body length is detemine dynamically */
+             _body_type = "chuncked";
+             _body_length = 0;
+        }
+    }
+
+    if (_body_type == "body" && buffer.length() < _body_length)
+    {
+        this->_completed = false;
+        return false;
+    } else {
+        this->_body = buffer;
+        this->_completed = true;
+        return true;
+    }
+
+    if (_body_type == "chuncked")
+    {
+        if (!handleChunked(buffer))
+        {
+            this->_completed = false;
+            return false;
+        }
+        this->_completed = true;
+        return true;
+    }
+
+    this->_completed = true;
+    return true;
+}
+
+/*
+Chunck handling
+    length := 0
+     read chunk-size, chunk-ext (if any), and CRLF
+     while (chunk-size > 0) {
+        read chunk-data and CRLF
+        append chunk-data to decoded-body
+        length := length + chunk-size
+        read chunk-size, chunk-ext (if any), and CRLF
+     }
+     read trailer field
+     while (trailer field is not empty) {
+        if (trailer field is allowed to be sent in a trailer) {
+            append trailer field to existing header fields
+        }
+        read trailer-field
+     }
+     Content-Length := length
+*/
+
+bool        Request::handleChunked(std::string body)
+{
+    size_t          len = 0;
+    size_t          found = 0;
+    std::string     buffer = body;
+    std::string     temp;
+    bool            is_chuck_len = true;
+
+    do {
+        /* find length */
+        found = buffer.find("\r\n");
+        if (found == std::string::npos)
+        {
+            return false;
+        }
+
+        if (is_chuck_len)
+        {
+            std::string temp = ft_tolower(buffer.substr(0, found));
+
+            if (!ft_ishex(temp))
+            {
+                setError(400);
+                return true;
+            }
+
+            len = ft_htoi(temp);
+            _body_length += len;
+            is_chuck_len = true;
+        } else {
+            std::string temp = buffer.substr(0, found);
+
+            if (temp.length() != len)
+            {
+                setError(400);
+                return true;
+            }
+
+            _body = _body + temp;
+            is_chuck_len = true;
+        }
+        
+        buffer = buffer.substr(found + 2, buffer.length());
+
+    } while (len > 0);
+
+    found = buffer.find("\r\n");
+    if (found != 0)
+    {
+        setError(400);
+        return true;
+    }
+
     return true;
 }
 

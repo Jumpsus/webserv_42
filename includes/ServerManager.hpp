@@ -3,7 +3,7 @@
 
 # define MAX_CONNECTION 1000
 # define CONNECTION_TIMEOUT 30
-# define CLIENT_BUFFER 1
+# define CLIENT_BUFFER 1000
 
 # include "Webserv.hpp"
 # include "config/Server.hpp"
@@ -37,7 +37,7 @@ class ServerManager {
         void                    receiveRequest(int read_fd, Client c);
         void                    closeConnection(const int i);
         void                    addSet(int fd, fd_set* set);
-        void                    removeSet(int fd, fd_set* set);           
+        void                    removeSet(int fd, fd_set* set);  
 };
 
 #endif

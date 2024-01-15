@@ -34,3 +34,23 @@ Client::~Client() {}
 void    Client::setSocket(int fd) {
     _socket_fd = fd;
 }
+
+bool    Client::feed(std::string input, size_t len)
+{
+    _raw_request = _raw_request + input.substr(0, len);
+
+    std::cout << "input = " << input << std::endl;
+    std::cout << "len = " << input.length() << std::endl;
+    Request r;
+
+    if (!r.parseRequest(_raw_request))
+    {
+        std::cout << "parse Request failed" << std::endl; 
+        return false;
+    }
+
+    std::cout << "error : " << r.getError() << std::endl;
+
+    _req = r;
+    return true;
+}
