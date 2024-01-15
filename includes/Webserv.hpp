@@ -1,5 +1,5 @@
 #ifndef WEBSERV_HPP
-# define WEVSERV_HPP
+# define WEBSERV_HPP
 
 # ifdef __linux__
 #  define OS    "linux"

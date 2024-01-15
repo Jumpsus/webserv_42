@@ -126,14 +126,12 @@ void    ServerManager::startlisten()
             std::cerr << "listen fd " << it->getFd() << " error : " << std::endl;
             exit (-1);
         }
-        /*(Non Linux/BSD)Make socket non_blocking*/
-        /*For Linux/BSD, the sockets are already set as non-blocking via SOCK_NONBLOCK
-        if (!strcmp(OS, "other")) {
-            if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
-                std::cerr << "fcntl fd " << it->getFd() << " error : " << std::endl;
-                exit (-1);
-            }
-        }*/
+
+        if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
+            std::cerr << "fcntl fd " << it->getFd() << " error : " << std::endl;
+            exit (-1);
+        }
+        
         if (!_servers_map.count(it->getFd()))
         {
             _servers_map.insert(std::pair<int, Server>(it->getFd(), *it));

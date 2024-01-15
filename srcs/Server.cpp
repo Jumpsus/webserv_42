@@ -1,9 +1,5 @@
 #include "config/Server.hpp"
 
-Server::Server() {
-    // shouldn't call this function;
-}
-
 Server::Server()
 {
     std::cout << "start Server()" << std::endl;
@@ -279,17 +275,6 @@ std::string                 Server::getRoot() const
     return this->_root;
 }
 
-int                         Server::getFd()
-{
-    return this->_fd;
-}
-
-void                        Server::setFd(int sd)
-{
-    this->_fd = sd;
-    return ;
-}
-
 void    Server::checkDupLocation(const Location& ori, const Location& check)
 {
     if (ori.getPath() == check.getPath())
@@ -301,23 +286,13 @@ void                        Server::setServer()
     struct sockaddr_in addr;
 
     /*(Non Linux/BSD)Create an AF_INET6 stream socket to receive incoming connections on*/
-    if (!strcmp(OS, "other")) {
-        //std::cout << socket(AF_INET, SOCK_STREAM, 0) << std::endl;
-        if ( (_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-        {
-            std::cerr << "init socket error " << std::endl;
-            exit(-1);
-        }
+    //std::cout << socket(AF_INET, SOCK_STREAM, 0) << std::endl;
+    if ( (_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        std::cerr << "init socket error " << std::endl;
+        exit(-1);
     }
-    /*(Linux/BSD)Direclty create an AF_INET6 socket in non-blocking mode
-    please read https://man7.org/linux/man-pages/man2/socket.2.html for more information*/
-    else {
-        if ( (_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0)) < 0)
-        {
-            std::cerr << "init socket error " << std::endl;
-            exit(-1);
-        }
-    }
+
     /*Allow socket descriptor to be reuseable*/
     int option = 1;
     if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&option, sizeof(option))< 0) {
@@ -325,14 +300,12 @@ void                        Server::setServer()
         close(_fd);
         exit(-1);
     }
-    /*ioctl the socket to nonblocking (if OS is not Linux/BSD)*/
-    if (!strcmp(OS, "other")) {
-            if (fcntl(_fd, F_SETFL, O_NONBLOCK) < 0) {
-                std::cerr << "fcntl fd " << _fd << " error : " << std::endl;
-                close(_fd);
-                exit (-1);
-            }
-        }
+
+    if (fcntl(_fd, F_SETFL, O_NONBLOCK) < 0) {
+        std::cerr << "fcntl fd " << _fd << " error : " << std::endl;
+        close(_fd);
+        exit (-1);
+    }
     /*bind the socket*/
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
