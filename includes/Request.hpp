@@ -49,6 +49,7 @@ class Request {
         void                                setPath(std::string path);
         void                                setVersion(std::string version);
         void                                setError(int error);
+        void                                setMaxBodySize(size_t max);
 
         void                                printRequest();
 
@@ -68,6 +69,7 @@ class Request {
         std::string                         _protocol_version;
         std::string                         _connection;
         int                                 _error;
+        size_t                              _max_body_size;
 
         bool                                handleChunked(std::string body);
 };

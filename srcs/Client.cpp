@@ -3,7 +3,11 @@
 
 Client::Client() {}
 
-Client::Client(Server const serv): _serv(serv) {}
+Client::Client(Server const serv): _serv(serv)
+{
+    _resp.setServer(serv);
+    _req.setMaxBodySize(serv.getClientMaxBodySize());
+}
 
 Client::Client(Client const &cli): _serv(cli._serv)
 {
