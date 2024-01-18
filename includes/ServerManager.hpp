@@ -34,7 +34,8 @@ class ServerManager {
 
         void                    startlisten();
         void                    acceptConnection(int server_fd);
-        void                    receiveRequest(int read_fd, Client c);
+        void                    receiveRequest(int read_fd);
+        void                    writeResponse(int write_fd);
         void                    closeConnection(const int i);
         void                    addSet(int fd, fd_set* set);
         void                    removeSet(int fd, fd_set* set);  

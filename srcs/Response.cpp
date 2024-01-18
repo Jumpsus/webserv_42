@@ -220,3 +220,8 @@ void        Response::buildBody()
 {
     _response_content.append(_body);
 }
+
+void        Response::printResponse()
+{
+    std::cout << _response_content << std::endl;
+}

@@ -69,6 +69,7 @@ class Response {
         void            setServer(Server serv);
 
         void            buildResponse();
+        void            printResponse();
     private:
         Request                             _request;
         Server                              _server;
