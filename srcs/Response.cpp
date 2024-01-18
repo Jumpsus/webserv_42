@@ -5,6 +5,7 @@ Response::Response()
     this->_response_content = "";
     this->_status = "";
     this->_error = 0;
+    this->_auto_index = false;
     this->_body = "";
     this->_target_file = "";
 }
@@ -23,6 +24,7 @@ Response::Response(Response const &response)
         this->_response_content = response._response_content;
         this->_status = response._status;
         this->_error = response._error;
+        this->_auto_index = response._auto_index;
         this->_header = response._header;
         this->_body = response._body;
         this->_target_file = response._target_file;
@@ -41,6 +43,7 @@ Response &Response::operator=(Response const &response)
         this->_response_content = response._response_content;
         this->_status = response._status;
         this->_error = response._error;
+        this->_auto_index = response._auto_index;
         this->_header = response._header;
         this->_body = response._body;
         this->_target_file = response._target_file;
@@ -66,14 +69,29 @@ void        Response::setServer(Server serv)
 
 void        Response::buildResponse()
 {
-    if (this->_error)
+    if (this->_error || buildBody())
     {
         buildErrorBody();
     }
 
-    buildFirstLine();
-    buildHeaders();
-    buildBody();
+    appendFirstLine();
+    appendHeaders();
+    appendBody();
+}
+
+int         Response::buildBody()
+{
+    if (findMatchLocation())
+    {
+        // Case use parameter from location in server;
+
+    } else {
+        // Case use parameter from server;
+        _target_file = _server.getRoot() + _request.getPath();
+    }
+
+
+    return (0);
 }
 
 void        Response::buildErrorBody()
@@ -89,7 +107,7 @@ void        Response::buildErrorBody()
 
 void        Response::setDefaultErrorFile(int error)
 {
-    std::string file_name = "assets/default-error/";
+    std::string file_name = "docs/default-error/";
     file_name.append(ft_to_string(error));
     file_name.append(".html");
 
@@ -101,7 +119,7 @@ std::string Response::getResponse()
     return (this->_response_content);   
 }
 
-void        Response::buildFirstLine()
+void        Response::appendFirstLine()
 {
     _response_content = "HTTP/1.1 " + ft_to_string(_error) + " ";
 
@@ -202,7 +220,7 @@ void        Response::createHeaders()
     _header["Content-Length"] = ft_to_string(_body.length());
 }
 
-void        Response::buildHeaders()
+void        Response::appendHeaders()
 {
     createHeaders();
     
@@ -218,9 +236,27 @@ void        Response::buildHeaders()
     _response_content.append("\r\n");
 }
 
-void        Response::buildBody()
+void        Response::appendBody()
 {
     _response_content.append(_body);
+}
+
+bool        Response::findMatchLocation()
+{
+    std::vector<Location>           locs = _server.getLocations();
+    
+    for (std::vector<Location>::iterator it = locs.begin(); it != locs.end() ;it++)
+    {
+        if (_request.getPath().find(it->getPath()) == 0)
+        {
+            if (it->getPath().length() > _location.length())
+            {
+                _location = it->getPath();
+            }
+        }
+    }
+
+    return (_location.length() > 0);
 }
 
 void        Response::printResponse()

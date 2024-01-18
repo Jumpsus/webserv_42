@@ -3,8 +3,10 @@
 
 # include <string>
 # include <map>
+# include <vector>
 # include "Request.hpp"
 # include "config/Server.hpp"
+# include "config/Location.hpp"
 
 /*
    +------+-------------------------------+--------------------------+
@@ -56,6 +58,7 @@
 
 class Server;
 class Request;
+class Location;
 
 class Response {
     public:
@@ -77,6 +80,8 @@ class Response {
         std::string                         _response_content;
         std::string                         _status;
         int                                 _error;
+        bool                                _auto_index;
+        std::string                         _location;
         std::map<std::string, std::string>  _header;
         std::string                         _body;
         std::string                         _target_file;
@@ -84,10 +89,14 @@ class Response {
 
         void                                createHeaders();
 
-        void                                buildFirstLine();
-        void                                buildHeaders();
-        void                                buildBody();
+        void                                appendFirstLine();
+        void                                appendHeaders();
+        void                                appendBody();
+
+        int                                 buildBody();
         void                                buildErrorBody();
+        bool                                findMatchLocation();
+
         void                                setDefaultErrorFile(int error);
 };
 

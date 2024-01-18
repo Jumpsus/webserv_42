@@ -41,13 +41,13 @@ Server::Server(Server const &serv)
 
 void    Server::initErrorPage()
 {
-    _error_page[400] = "assets/default-error/400.html";
-    _error_page[403] = "assets/default-error/403.html";
-    _error_page[404] = "assets/default-error/404.html";
-    _error_page[405] = "assets/default-error/405.html";
-    _error_page[410] = "assets/default-error/410.html";
-    _error_page[413] = "assets/default-error/413.html";
-    _error_page[500] = "assets/default-error/500.html";
+    _error_page[400] = "docs/default-error/400.html";
+    _error_page[403] = "docs/default-error/403.html";
+    _error_page[404] = "docs/default-error/404.html";
+    _error_page[405] = "docs/default-error/405.html";
+    _error_page[410] = "docs/default-error/410.html";
+    _error_page[413] = "docs/default-error/413.html";
+    _error_page[500] = "docs/default-error/500.html";
 }
 
 void    Server::parseServer(std::string serverConfig)
@@ -268,6 +268,11 @@ bool                        Server::getAutoIndex() const
 size_t                      Server::getClientMaxBodySize() const
 {
     return this->_client_max_body_size;
+}
+
+std::vector<Location>       Server::getLocations() const
+{
+    return this->_locations;
 }
 
 std::string                 Server::getRoot() const
