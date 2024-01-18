@@ -52,6 +52,8 @@ class Request {
         void                                setMaxBodySize(size_t max);
 
         void                                printRequest();
+        void                                clear();
+        bool                                keepAlive();
 
     private:
         bool                                _completed;
@@ -60,7 +62,6 @@ class Request {
         std::string                         _body_type;
         size_t                              _body_length;
         std::string                         _method;
-        //HttpMethods                         _method;
         std::string                         _path;
         std::string                         _query;
         std::string                         _fragment;

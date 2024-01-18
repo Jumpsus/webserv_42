@@ -7,6 +7,7 @@ Client::Client(Server const serv): _serv(serv)
 {
     _resp.setServer(serv);
     _req.setMaxBodySize(serv.getClientMaxBodySize());
+    gettimeofday(&_time_stamp, NULL);
 }
 
 Client::Client(Client const &cli): _serv(cli._serv)
@@ -54,7 +55,6 @@ bool    Client::feed(std::string input, size_t len)
     }
 
     std::cout << "error : " << r.getError() << std::endl;
-    // TODO : Delete this
     if (!r.getError())
     {
         std::cout << "set Error to 400 " << std::endl;
@@ -81,3 +81,14 @@ void        Client::buildResponse()
 {
     _resp.buildResponse();
 }
+
+const struct timeval&   Client::getTime() const
+{
+    return _time_stamp;
+}
+
+void        Client::updateTime()
+{
+    gettimeofday(&_time_stamp, NULL);
+}
+

@@ -25,6 +25,9 @@ class Client {
 
         void            buildResponse();
 
+        const struct timeval&   getTime() const; //get time stamp
+        void                    updateTime(); //update time stamp
+
     private:
         int                 _socket_fd;
         Server              _serv;

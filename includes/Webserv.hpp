@@ -1,14 +1,8 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
-# ifdef __linux__
-#  define OS    "linux"
-# elif BSD
-#  define OS    "BSD"
-# else
-#  define OS    "other"
-# endif
-
+/*system related library*/
+# include <sys/time.h>
 /*socket related library*/
 # include <sys/socket.h>
 # include <sys/select.h>
