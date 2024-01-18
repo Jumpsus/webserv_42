@@ -3,7 +3,7 @@
 Response::Response()
 {
     this->_response_content = "";
-    this->_status = "";
+    this->_status = 0;
     this->_error = 0;
     this->_auto_index = false;
     this->_body = "";
@@ -12,7 +12,8 @@ Response::Response()
 
 Response::~Response()
 {
-
+    _header.clear();
+    _error_map.clear();
 }
 
 Response::Response(Response const &response)
@@ -71,6 +72,7 @@ void        Response::buildResponse()
 {
     if (this->_error || buildBody())
     {
+        _status = _error;
         buildErrorBody();
     }
 
@@ -84,18 +86,25 @@ int         Response::buildBody()
     if (findMatchLocation())
     {
         // Case use parameter from location in server;
-
     } else {
         // Case use parameter from server;
         _target_file = _server.getRoot() + _request.getPath();
-    }
 
+        if (!readFile(_target_file, _body))
+        {
+            _error = 404;
+            return (1);
+        }
+
+        _status = 200;
+    }
 
     return (0);
 }
 
 void        Response::buildErrorBody()
 {
+    _body = "";
     // if (_error_page.count(_error) > 0)
     // {
     //     return ;
@@ -121,9 +130,9 @@ std::string Response::getResponse()
 
 void        Response::appendFirstLine()
 {
-    _response_content = "HTTP/1.1 " + ft_to_string(_error) + " ";
+    _response_content = "HTTP/1.1 " + ft_to_string(_status) + " ";
 
-    switch (_error)
+    switch (_status)
     {
         case 100:
             _response_content.append("Continue"); break;
@@ -267,7 +276,7 @@ void        Response::printResponse()
 void        Response::clear()
 {
     this->_response_content = "";
-    this->_status = "";
+    this->_status = 0;
     this->_error = 0;
     this->_body = "";
     this->_target_file = "";

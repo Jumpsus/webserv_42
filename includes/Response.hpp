@@ -78,7 +78,7 @@ class Response {
         Request                             _request;
         Server                              _server;
         std::string                         _response_content;
-        std::string                         _status;
+        int                                 _status;
         int                                 _error;
         bool                                _auto_index;
         std::string                         _location;
