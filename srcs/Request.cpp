@@ -443,3 +443,28 @@ void Request::printRequest()
     std::cout << "--- body ---" << std::endl;
     std::cout << this->_body << std::endl;
 }
+
+void Request::clear()
+{
+    _header.clear();
+    _body = "";
+    _body_type = "";
+    _body_length = 0;
+    _method = "";
+    _path = "";
+    _query = "";
+    _fragment = "";
+    _version = "";
+    _protocol = "";
+    _protocol_version = "";
+    _connection = "";
+    _error = 0;
+    _completed = false;
+}
+
+bool Request::keepAlive()
+{
+    if (_connection == "keep-alive")
+        return true;
+    return false;
+}

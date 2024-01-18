@@ -3,7 +3,6 @@ SRCS =	srcs/utils.cpp \
 		srcs/Response.cpp \
 		srcs/Config.cpp	\
 		srcs/Server.cpp \
-		srcs/Cgi.cpp \
 		srcs/Location.cpp \
 		srcs/ServerManager.cpp \
 		srcs/Client.cpp
