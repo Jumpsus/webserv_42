@@ -22,6 +22,8 @@ class Client {
         
         void            setRequest(Request req);
         std::string     getResponse();
+        bool            keepAlive();
+        void            clearContent();
 
         void            buildResponse();
 

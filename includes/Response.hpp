@@ -70,6 +70,7 @@ class Response {
 
         void            buildResponse();
         void            printResponse();
+        void            clear();
     private:
         Request                             _request;
         Server                              _server;

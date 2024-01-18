@@ -77,6 +77,18 @@ std::string Client::getResponse()
     return (_resp.getResponse());
 }
 
+bool        Client::keepAlive()
+{
+    return (_req.keepAlive());
+}
+
+void        Client::clearContent()
+{
+    _raw_request = "";
+    _req.clear();
+    _resp.clear();
+}
+
 void        Client::buildResponse()
 {
     _resp.buildResponse();

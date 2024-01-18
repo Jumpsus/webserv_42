@@ -227,3 +227,13 @@ void        Response::printResponse()
 {
     std::cout << _response_content << std::endl;
 }
+
+void        Response::clear()
+{
+    this->_response_content = "";
+    this->_status = "";
+    this->_error = 0;
+    this->_body = "";
+    this->_target_file = "";
+    _request.clear();
+}
