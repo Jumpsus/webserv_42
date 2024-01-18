@@ -34,5 +34,6 @@ std::string                         ft_tolower(std::string input);
 std::string                         ft_to_string(size_t num);
 bool                                ft_is_white_space(char c);
 std::string                         ft_trimspace(std::string input);
+bool                                ft_isURI(const std::string& word);
 
 #endif
