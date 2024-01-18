@@ -8,6 +8,7 @@
 # include <map>
 # include <iostream>
 # include <stdlib.h>
+# define MAX_URI_LENGTH 4096
 
 /*
     start-line
@@ -37,14 +38,14 @@ class Request {
         bool                                isCompleted();
         bool                                parseRequest(std::string req);
         
-        std::string                         getMethod();
-        std::string                         getPath();
-        std::string                         getQuery();
-        std::string                         getVersion();
+        const std::string&                  getMethod() const;
+        const std::string&                  getPath() const;
+        const std::string&                  getQuery() const;
+        const std::string&                  getVersion() const;
         int                                 getError();
-        std::map<std::string, std::string>  getHeader();
-        std::string                         getBody();
-        
+        const std::map<std::string, std::string>&  getHeader() const;
+        const std::string&                  getBody() const;
+
         void                                setMethod(std::string method);
         void                                setPath(std::string path);
         void                                setVersion(std::string version);

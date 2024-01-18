@@ -270,22 +270,22 @@ bool        Request::handleChunked(std::string body)
     return true;
 }
 
-std::string Request::getMethod()
+const std::string& Request::getMethod() const
 {
     return (this->_method);
 }
 
-std::string Request::getPath()
+const std::string& Request::getPath() const
 {
     return (this->_path);
 }
 
-std::string Request::getQuery()
+const std::string& Request::getQuery() const
 {
     return (this->_query);
 }
 
-std::map<std::string, std::string> Request::getHeader()
+const std::map<std::string, std::string>& Request::getHeader() const
 {
     return (this->_header);
 }
@@ -295,12 +295,12 @@ int Request::getError()
     return (this->_error);
 }
 
-std::string Request::getVersion()
+const std::string& Request::getVersion() const
 {
     return (this->_version);
 }
 
-std::string Request::getBody()
+const std::string& Request::getBody() const
 {
     return (this->_body);
 }
@@ -318,7 +318,14 @@ void    Request::setPath(std::string uri)
         this->setError(400);
         return ;
     }
-
+    else if (ft_isURI(uri) == false) {
+        this->setError(400);
+        return ;
+    }
+    else if (uri.length() > MAX_URI_LENGTH) {
+        this->setError(414);
+        return ;
+    }
     found = uri.find('?');
     if (found == std::string::npos)
     {
