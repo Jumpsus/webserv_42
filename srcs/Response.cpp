@@ -26,6 +26,7 @@ Response::Response(Response const &response)
         this->_header = response._header;
         this->_body = response._body;
         this->_target_file = response._target_file;
+        this->_error_map = response._error_map;
     }
 
     return ;
@@ -43,6 +44,7 @@ Response &Response::operator=(Response const &response)
         this->_header = response._header;
         this->_body = response._body;
         this->_target_file = response._target_file;
+        this->_error_map = response._error_map;
     }
 
     return (*this);
@@ -58,6 +60,7 @@ void        Response::setRequest(Request req)
 void        Response::setServer(Server serv)
 {
     this->_server = serv;
+    this->_error_map = serv.getErrorPage();
     return ;
 }
 
@@ -75,9 +78,22 @@ void        Response::buildResponse()
 
 void        Response::buildErrorBody()
 {
-    std::map<int, std::string> error_page = _server.getErrorPage();
+    // if (_error_page.count(_error) > 0)
+    // {
+    //     return ;
+    // }
 
-    _target_file = _server.getRoot();
+    setDefaultErrorFile(_error);
+    readFile(_target_file, _body);
+}
+
+void        Response::setDefaultErrorFile(int error)
+{
+    std::string file_name = "assets/default-error/";
+    file_name.append(ft_to_string(error));
+    file_name.append(".html");
+
+    _target_file = file_name;
 }
 
 std::string Response::getResponse()

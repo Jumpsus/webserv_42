@@ -69,7 +69,6 @@ class Response {
         void            setServer(Server serv);
 
         void            buildResponse();
-        void            buildErrorBody();
     private:
         Request                             _request;
         Server                              _server;
@@ -79,12 +78,15 @@ class Response {
         std::map<std::string, std::string>  _header;
         std::string                         _body;
         std::string                         _target_file;
+        std::map<int, std::string>          _error_map;
 
         void                                createHeaders();
-        
+
         void                                buildFirstLine();
         void                                buildHeaders();
         void                                buildBody();
+        void                                buildErrorBody();
+        void                                setDefaultErrorFile(int error);
 };
 
 #endif

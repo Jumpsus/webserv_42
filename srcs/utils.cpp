@@ -339,55 +339,6 @@ std::string findNextWord(std::string src)
     return (src.substr(0, index));
 }
 
-bool removeBracket(std::string &src, std::string prefix)
-{
-    size_t  found;
-    size_t  index;
-
-    trimPrefixSuffixConfig(src);
-    found = src.find(prefix);
-    if (found != 0)
-    {
-        return false;
-    }
-
-    if (src.length() == 0 || src[src.length() - 1] != '}')
-    {
-        return false;
-    }
-
-    index = prefix.length();
-
-    while (index < src.length())
-    {
-        switch (src[index])
-        {
-            case ' ':
-                index++;
-                break;
-            case '\t':
-                index++;
-                break;
-            case '\v':
-                index++;
-                break;
-            case '\n':
-                index++;
-                break;
-            case '\r':
-                index++;
-                break;
-            case '{':
-                index++;
-                src = src.substr(index, src.length() - 1);
-                return true;
-            default:
-                return false;
-        }
-    }
-    return false;
-}
-
 std::string ft_trimspace(std::string input)
 {
     int i = 0;
@@ -409,4 +360,27 @@ size_t  shiftBlock(const std::string& src, const std::string& blockName)
     while (ret < src.length() && src[ret] != '{')
         ret++;
     return ret;
+}
+
+bool     readFile(std::string file_location, std::string& buffer)
+{
+    std::ifstream file(file_location);
+    std::string    temp_string;
+
+    buffer = "";
+
+    if (file.is_open())
+    {
+        while (file)
+        {
+            std::getline(file, temp_string);
+            buffer.append(temp_string);
+            buffer.append("\n");
+        }
+        file.close();
+    } else {
+        return (false);
+    }
+
+    return (true);
 }
