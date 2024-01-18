@@ -204,6 +204,8 @@ void        Response::createHeaders()
 
 void        Response::buildHeaders()
 {
+    createHeaders();
+    
     std::map<std::string, std::string>::iterator it;
 
     for (it = _header.begin(); it != _header.end(); it ++)
