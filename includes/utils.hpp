@@ -7,6 +7,9 @@
 # include <ostream>
 # include <vector>
 # include <cctype>
+# include <iostream>
+# include <fstream>
+# include <string>
 
 # define s_iter std::vector<std::string>::iterator
 
@@ -15,10 +18,10 @@ std::string                         splitString(std::string &str, std::string de
 std::pair<std::string, std::string> parseHeader(std::string req);
 bool                                validateURI(std::string uri);
 void                                trimPrefixSuffixConfig(std::string &input);
-bool                                removeBracket(std::string &src, std::string prefix);
 std::string                         findBlock(std::string src, const std::string& blockName, bool trim);
 size_t                              shiftBlock(const std::string& src, const std::string& blockName);
 std::string                         findNextWord(std::string src);
+bool                                readFile(std::string file_location, std::string& buffer);
 
 bool                                ft_isdigit(const std::string& input);
 bool                                ft_ishex(std::string input);

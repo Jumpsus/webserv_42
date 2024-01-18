@@ -3,7 +3,11 @@
 
 Client::Client() {}
 
-Client::Client(Server const serv): _serv(serv) {}
+Client::Client(Server const serv): _serv(serv)
+{
+    _resp.setServer(serv);
+    _req.setMaxBodySize(serv.getClientMaxBodySize());
+}
 
 Client::Client(Client const &cli): _serv(cli._serv)
 {
@@ -50,7 +54,30 @@ bool    Client::feed(std::string input, size_t len)
     }
 
     std::cout << "error : " << r.getError() << std::endl;
+    // TODO : Delete this
+    if (!r.getError())
+    {
+        std::cout << "set Error to 400 " << std::endl;
+        r.setError(400);
+    }
 
-    _req = r;
+    setRequest(r);
     return true;
+}
+
+void        Client::setRequest(Request req)
+{
+    _req = req;
+    _resp.setRequest(req);
+    return ;
+}
+
+std::string Client::getResponse()
+{
+    return (_resp.getResponse());
+}
+
+void        Client::buildResponse()
+{
+    _resp.buildResponse();
 }

@@ -424,6 +424,12 @@ void Request::setError(int error)
     return ;
 }
 
+void Request::setMaxBodySize(size_t max)
+{
+    this->_max_body_size = max;
+    return ;
+}
+
 void Request::printRequest()
 {
     std::map<std::string, std::string>::iterator it;

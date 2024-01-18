@@ -100,10 +100,11 @@ void    ServerManager::startServers()
                 std::cout << "accept "<< std::endl;
                 acceptConnection(i);
             } else if (FD_ISSET(i, &current_read)) {
-                receiveRequest(i, _clients_map[i]);
+                receiveRequest(i);
                 ready--;
             } else if (FD_ISSET(i, &current_write)) {
-                // ready--;
+                writeResponse(i);
+                ready--;
             }
         }
 
@@ -190,7 +191,7 @@ void    ServerManager::acceptConnection(int server_fd)
 /* please mark read fd as non-bloacking before use recv() 
    if not recv will block other connection and make server misbehaviour */
 
-void    ServerManager::receiveRequest(int read_fd, Client c)
+void    ServerManager::receiveRequest(int read_fd)
 {
     std::cout << "start recv " << std::endl;
     char buffer[CLIENT_BUFFER];
@@ -209,7 +210,8 @@ void    ServerManager::receiveRequest(int read_fd, Client c)
         if (_clients_map[read_fd].feed(req, rc))
         {
             removeSet(read_fd, &_read_fd);
-            // addSet(read_fd, &_write_fd);
+            addSet(read_fd, &_write_fd);
+            _clients_map[read_fd].buildResponse();
         }
         memset(buffer, 0, sizeof(buffer));
         return ;
@@ -220,6 +222,25 @@ void    ServerManager::receiveRequest(int read_fd, Client c)
         std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
         closeConnection(read_fd);
     }
+}
+
+void    ServerManager::writeResponse(int write_fd)
+{
+    std::cout << "start recv " << std::endl;
+    std::string resp = _clients_map[write_fd].getResponse();
+
+    std::cout << "Response = " << resp << std::endl;
+
+    /* After recv fd is set not ready for read until Client cancelled connection */
+    int rc = send(write_fd, resp.c_str(), resp.length(), 0);
+
+    if (rc < 0) {
+        std::cerr << "[Crash] error send:" << errno << "end server now" << std::endl;
+        closeConnection(write_fd);
+        return ;
+    }
+
+    closeConnection(write_fd);
 }
 
 void    ServerManager::addSet(int fd, fd_set* set)

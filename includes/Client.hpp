@@ -17,8 +17,13 @@ class Client {
         Client &operator=(Client const &cli);
         ~Client();
 
-        void    setSocket(int fd);
-        bool    feed(std::string input, size_t len); // return true when request is complete
+        void            setSocket(int fd);
+        bool            feed(std::string input, size_t len); // return true when request is complete
+        
+        void            setRequest(Request req);
+        std::string     getResponse();
+
+        void            buildResponse();
 
     private:
         int                 _socket_fd;
