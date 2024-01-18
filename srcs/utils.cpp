@@ -364,7 +364,7 @@ size_t  shiftBlock(const std::string& src, const std::string& blockName)
 
 bool     readFile(std::string file_location, std::string& buffer)
 {
-    std::ifstream file(file_location);
+    std::ifstream file(file_location.c_str());
     std::string    temp_string;
 
     buffer = "";
