@@ -385,6 +385,19 @@ bool     readFile(std::string file_location, std::string& buffer)
     return (true);
 }
 
+bool    ft_isURI(const std::string& word)
+{
+    /* : / ? # [ ] @ ! $ & ' ( ) * + , ; = */
+    /*all alphabet, number, - , . , _ , ~*/
+    for (int i = 0; i < word.length(); i++)
+    {
+        if ( !((word[i] >= '#' && word[i] <= ';') || (word[i] >= '?' && word[i] <= '[') || (word[i] >= 'a' && word[i] <= 'z') ||
+                word[i] == '!' || word[i] == '=' || word[i] == ']' || word[i] == '_' || word[i] == '~') )
+            return (false);
+    }
+    return (true);
+}
+
 std::string getExtension(std::string file)
 {
     std::string ext = "";

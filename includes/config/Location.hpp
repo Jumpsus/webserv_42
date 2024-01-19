@@ -16,7 +16,12 @@ class Location {
         ~Location();
 
         void printLocationInfo();
+
+        /*getters*/
         const std::string&              getPath() const;
+        const std::string&              getRoot() const;
+        const std::vector<std::string>& getCgiPath() const;
+        const std::vector<std::string>& getCgiExt() const;
     private:
         std::string                     _path;
         std::string                     _root;
