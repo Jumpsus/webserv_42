@@ -1,5 +1,7 @@
 #include "Cgi.hpp"
 
+CgiHandler::CgiHandler() {}
+
 CgiHandler::CgiHandler(Request& request, Location& loc_ptr)
 {
     this->_body = request.getBody();
@@ -33,55 +35,36 @@ CgiHandler::~CgiHandler()
 }
 
 /*_env variables sources 
-1) https://www6.uniovi.es/~antonio/ncsa_httpd/cgi/env.html
-2) https://www.ibm.com/docs/en/netcoolomnibus/8.1?topic=scripts-environment-variables-in-cgi-script
+1) https://linux.die.net/man/5/cgi
+2) https://docs.fileformat.com/th/executable/cgi/#google_vignette (thai)
 */
 
 void CgiHandler::_setEnv(Request& request, Location& loc_ptr)
 {
     std::map<std::string, std::string> headers = request.getHeader();
-    /* The name of the authentication scheme used to protect the servlet. 
-       If the "Auth-Scheme" is found & not empty, it set "AUTH_TYPE*/
     if (headers.find("Auth-Scheme") != headers.end() && headers["Auth-Scheme"] != "")
-        this->_env["AUTH_TYPE"] = headers["Authorization"];
+        this->_env["AUTH_TYPE"] = headers["authorization"];
 
-    /* The following environment variables are not request-specific 
-        and are set for all requests */
-    this->_env["SERVER_SOFTWARE"] = "WebServ/1.0";
-    if (headers.find("Hostname") != headers.end())
-        this->_env["SERVER_NAME"] = headers["Hostname"];
-    else
-        this->_env["SERVER_NAME"] = "";
+    this->_env["CONTENT_LENGTH"] = headers["content-length"];
+    this->_env["CONTENT_TYPE"] = headers["content-type"];
+    this->_env["DOCUMENT_ROOT"] = loc_ptr.getRoot();
     this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-
-    /* The following environment variables are specific to 
-       the request being fulfilled by the gateway program */
-
-    //this->_env["SERVER_PROTOCOL"] = request.getVersion();
-
-    this->_env["SERVER_PROTOCOL"] = "HTTP/1.1"; //Supposed to be HTTP 1.1 for HTTP servlets
-    this->_env["SERVER_PORT"] = request.getPort(); //TODO
-    this->_env["REQUEST_METHOD"] = request.getMethod();
-    this->_env["PATH_INFO"] = request.getPath();
-    this->_env["PATH_TRANSLATED"] = request.getPath();
-    this->_env["SCRIPT_NAME"] = "cgi-bin/" + loc_ptr.getPath()[0];
-    this->_env["QUERY_STRING"] = request.getQuery();
-
-    /* The following environment variables are related to the machine that made a reqeust*/
-    this->_env["REMOTE_HOST"] = request.getClientHostname();
-    this->_env["REMOTE_ADDR"] = request.getClientIP();
-    if (this->_env["SERVER_NAME"] == "")
-        this->_env["SERVER_NAME"] = this->_env["REMOTE_ADDR"];
-    this->_env["REMOTE_USER"] = headers["Authorization"];
-    this->_env["REMOTE_IDENT"] = headers["Authorization"];
-
-    this->_env["CONTENT_TYPE"] = headers["Content-Type"];
-    this->_env["CONTENT_LENGTH"] = ft_to_string(request.getBody().length());
-    
-    this->_env["HTTP_ACCEPT"] = "HTTP_" + this->_env["CONTENT_TYPE"];
-    this->_env["HTTP_USER_AGENT"] = "HTTP_" + this->_env["USER-AGENT"];
-    this->_env["HTTP_COOKIE"] = headers["cookie"];
-
+    this->_env["HTTP_ACCEPT"] = headers["accept"];
+    this->_env["HTTP_ACCEPT_ENCODING"] = headers["accept-encoding"];
+    this->_env["HTTP_ACCEPT_LANGUAGE"] = headers["accept-language"];
+    this->_env["HTTP_CONNECTION"] = headers["connection"];
+    this->_env["HTTP_HOST"] = headers["host"];
+    this->_env["HTTP_REFERER"] = headers["referer"];
+    this->_env["HTTP_USER_AGENT"] = headers["user-agent"];
+    this->_env["PATH_INFO"] = _getPathInfo(request.getPath(), loc_ptr.getCgiExt());
+    this->_env["PATH_TRANSLATED"] = loc_ptr.getRoot() + (this->_env["PATH_INFO"] == "" ? "/" : this->_env["PATH_INFO"]);
+    this->_env["QUERY_STRING"] = _decodeQuery(request.getQuery());
+    this->_env["REMOTE_ADDR"] = headers["host"]; //currently consider adding DNS search
+    this->_env["SERVER_NAME"] = splitString(headers["host"], ":");
+    this->_env["SERVER_PORT"] = headers["host"].substr(this->_env["SERVER_NAME"].length() + 1, headers["host"].length());
+    this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    this->_env["SERVER_SOFTWARE"] = "NGINX";
+    headers.clear();
     this->_body = request.getBody();
 }
 
@@ -96,7 +79,7 @@ char**  CgiHandler::_envToCstrArr() const
     int     j = 0;
 
     c_env[this->_env.size()] == NULL;
-    for (env_iter it = this->_env.begin() ; env_iter != this->_env.end() ; it++)
+    for (env_iter it = this->_env.begin() ; it != this->_env.end() ; it++)
     {
         std::string     elem = it->first + "=" + it->second;
         c_env[j] = new char[elem.size() + 1];
@@ -106,7 +89,7 @@ char**  CgiHandler::_envToCstrArr() const
     return c_env;
 }
 
-std::string CgiHandler::execCgi(const std::string& script)
+std::string CgiHandler::execCgi(const std::string& script, int &error)
 {
     pid_t   pid;
     int     buf_stdin;
@@ -114,11 +97,11 @@ std::string CgiHandler::execCgi(const std::string& script)
     char    **env;
     std::string retBody;
 
-    try {
-        env = this->_envToCstrArr();
-    }
-    catch (std::bad_alloc &e) {
-        std::cerr << e.what() << std::endl;
+    env = this->_envToCstrArr();
+    if (env[0] == NULL || env[1] == NULL)
+    {
+        error = 500;
+        return "";
     }
     buf_stdin = dup(STDIN_FILENO);
     buf_stdout = dup(STDOUT_FILENO);
@@ -134,7 +117,7 @@ std::string CgiHandler::execCgi(const std::string& script)
 
     pid = fork();
     if (pid == -1)
-        return ("Status: 500 \r\n\r\n");
+        error = 500;
     else if (!pid)
     {
         dup2(fdIn, STDIN_FILENO);
@@ -171,4 +154,46 @@ std::string CgiHandler::execCgi(const std::string& script)
             exit(0);
         return (retBody);
     }
+}
+
+/*This function check if PATH_INFO exist it request path, by finding the occurance of cgi extentions*/
+std::string CgiHandler::_getPathInfo(const std::string& req_path, const std::vector<std::string>& exts)
+{
+    std::string temp_str;
+    size_t  begin, end;
+
+    /*find if request "_path" contain "_cgi_ext"*/
+    for (std::vector<std::string>::const_iterator ext_ptr = exts.begin(); ext_ptr != exts.end(); ext_ptr++)
+    {
+        if (begin = req_path.find(*ext_ptr) != std::string::npos)
+        {
+            if (begin + 3 >= req_path.size())
+                return "";
+            temp_str = req_path.substr(begin + 3, req_path.size());
+            if (!temp_str[0] || temp_str[0] != '/')
+                return "";
+            end = temp_str.find("?");
+            if (end == std::string::npos)
+                return temp_str;
+            else
+                return temp_str.substr(0, end);
+        }
+    }
+    return "";
+}
+
+/*This function change the "encoded" reserve characters back to the reserve characters
+https://en.wikipedia.org/wiki/Percent-encoding --> reserve character*/
+std::string CgiHandler::_decodeQuery(std::string req_query)
+{
+    size_t  p_pos = req_query.find("%");
+    while (p_pos != std::string::npos)
+    {
+        if (req_query.length() < p_pos + 2)
+            break ;
+        char    r_char = ft_htoi(req_query.substr(p_pos + 1, 2));
+        req_query.replace(p_pos, 3, std::to_string(r_char));
+        p_pos = req_query.find("%");
+    }
+    return req_query;
 }

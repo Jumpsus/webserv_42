@@ -73,6 +73,21 @@ const std::string& Location::getPath() const
     return _path;
 }
 
+const std::string& Location::getRoot() const
+{
+    return _root;
+}
+
+const std::vector<std::string>& Location::getCgiPath() const
+{
+    return _cgi_path;
+}
+
+const std::vector<std::string>& Location::getCgiExt() const
+{
+    return _cgi_ext;
+}
+
 void    Location::parseLocation(std::string locationConfig)
 {
     size_t                      index = 0;

@@ -369,7 +369,7 @@ void Request::setMethod(std::string method)
         this->_method = "DELETE";
         return;
     }
-    this->setError(400);
+    this->setError(501); //its not 400
     return ;
 }
 
@@ -449,6 +449,8 @@ void Request::printRequest()
 
     std::cout << "--- body ---" << std::endl;
     std::cout << this->_body << std::endl;
+    std::cout << "--- query ---" << std::endl;
+    std::cout << this->_query << std::endl;
 }
 
 void Request::clear()
