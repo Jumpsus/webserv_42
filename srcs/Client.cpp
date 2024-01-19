@@ -44,21 +44,12 @@ bool    Client::feed(std::string input, size_t len)
 {
     _raw_request = _raw_request + input.substr(0, len);
 
-    std::cout << "input = " << input << std::endl;
-    std::cout << "len = " << input.length() << std::endl;
     Request r;
 
     if (!r.parseRequest(_raw_request))
     {
         std::cout << "parse Request failed" << std::endl; 
         return false;
-    }
-
-    std::cout << "error : " << r.getError() << std::endl;
-    if (!r.getError())
-    {
-        std::cout << "set Error to 400 " << std::endl;
-        r.setError(400);
     }
 
     setRequest(r);
@@ -75,6 +66,18 @@ void        Client::setRequest(Request req)
 std::string Client::getResponse()
 {
     return (_resp.getResponse());
+}
+
+bool        Client::keepAlive()
+{
+    return (_req.keepAlive());
+}
+
+void        Client::clearContent()
+{
+    _raw_request = "";
+    _req.clear();
+    _resp.clear();
 }
 
 void        Client::buildResponse()

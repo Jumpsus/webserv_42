@@ -22,6 +22,7 @@ std::string                         findBlock(std::string src, const std::string
 size_t                              shiftBlock(const std::string& src, const std::string& blockName);
 std::string                         findNextWord(std::string src);
 bool                                readFile(std::string file_location, std::string& buffer);
+std::string                         getExtension(std::string file);
 
 bool                                ft_isdigit(const std::string& input);
 bool                                ft_ishex(std::string input);

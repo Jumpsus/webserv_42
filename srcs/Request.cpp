@@ -130,6 +130,11 @@ bool    Request::parseRequest(std::string req)
             return true;
         }
         this->_header.insert(tempHeader);
+
+        if (tempHeader.first == "connection")
+        {
+            _connection = _connection.append(tempHeader.second);
+        }
         buffer = buffer.substr(found + 2, buffer.length());
     } while (buffer.length() > 0);
 
@@ -471,9 +476,13 @@ void Request::clear()
     _completed = false;
 }
 
+/*
+    keep-alive is default in HTTP/1.1
+    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection 
+*/
 bool Request::keepAlive()
 {
-    if (_connection == "keep-alive")
-        return true;
-    return false;
+    if (_connection.find("close") != std::string::npos)
+        return false;
+    return true;
 }

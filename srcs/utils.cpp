@@ -397,3 +397,19 @@ bool    ft_isURI(const std::string& word)
     }
     return (true);
 }
+
+std::string getExtension(std::string file)
+{
+    std::string ext = "";
+    
+    for (int i = file.length() - 1; i >= 0 ; i--)
+    {
+        if (file[i] == '.')
+        {
+            return (ext);
+        }
+        ext = file[i] + ext;
+    }
+
+    return "";
+}
