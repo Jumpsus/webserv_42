@@ -199,7 +199,6 @@ void    ServerManager::acceptConnection(int server_fd)
 
 void    ServerManager::receiveRequest(int read_fd)
 {
-    std::cout << "start recv " << std::endl;
     char buffer[CLIENT_BUFFER];
 
     /* After recv fd is set not ready for read until Client cancelled connection */
@@ -235,7 +234,6 @@ void    ServerManager::receiveRequest(int read_fd)
 
 void    ServerManager::writeResponse(int write_fd)
 {
-    std::cout << "start recv " << std::endl;
     std::string resp = _clients_map[write_fd].getResponse();
 
     std::cout << "Response = " << resp << std::endl;
@@ -249,7 +247,14 @@ void    ServerManager::writeResponse(int write_fd)
         return ;
     }
 
-    closeConnection(write_fd);
+    if (_clients_map[write_fd]._req.keepAlive())
+    {
+        removeSet(write_fd, &_write_fd);
+        addSet(write_fd, &_read_fd);
+        _clients_map[write_fd].clearContent();
+    } else {
+        closeConnection(write_fd);
+    }
 }
 
 void    ServerManager::addSet(int fd, fd_set* set)

@@ -376,6 +376,7 @@ bool     readFile(std::string file_location, std::string& buffer)
             std::getline(file, temp_string);
             buffer.append(temp_string);
             buffer.append("\n");
+            temp_string = "";
         }
         file.close();
     } else {

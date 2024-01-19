@@ -217,7 +217,7 @@ void        Response::appendFirstLine()
         case 505:
             _response_content.append("HTTP Version Not Supported"); break;
         default:
-            _response_content.append("Default");
+            _response_content.append("UNKNOWN");
     }
 
     _response_content.append("\r\n");
@@ -248,6 +248,7 @@ void        Response::appendHeaders()
 void        Response::appendBody()
 {
     _response_content.append(_body);
+    std::cout << "body = " << _body << std::endl;
 }
 
 bool        Response::findMatchLocation()
