@@ -77,7 +77,7 @@ void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string&
     std::string file_path = this->_cgiPath;
     size_t      pos = this->_cgiPath.find("cgi-bin/");
     this->_env["SCRIPT_NAME"] = file_path.substr(pos, this->_cgiPath.length() - pos);
-    this->_env{"SCRIPT_FILENAME"} = this->_cgiPath;
+    this->_env["SCRIPT_FILENAME"] = this->_cgiPath;
     this->_env["REMOTE_ADDR"] = host;
     this->_env["SERVER_NAME"] = splitString(headers["host"], ":");
     this->_env["SERVER_PORT"] = headers["host"].substr(this->_env["SERVER_NAME"].length() + 1, headers["host"].length());

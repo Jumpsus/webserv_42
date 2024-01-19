@@ -6,3 +6,7 @@
 .gitignore
 /delete
 gitpassword
+cgi-bin/
+docs/
+configs/kaydoo1.conf
+configs/kaydoo2.conf

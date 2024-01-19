@@ -5,8 +5,8 @@ Client::Client() {}
 
 Client::Client(Server const serv): _serv(serv)
 {
-    _resp.setServer(serv);
-    _req.setMaxBodySize(serv.getClientMaxBodySize());
+    this->resp.setServer(serv);
+    this->req.setMaxBodySize(serv.getClientMaxBodySize());
     gettimeofday(&_time_stamp, NULL);
 }
 
@@ -15,8 +15,8 @@ Client::Client(Client const &cli): _serv(cli._serv)
     if (this != &cli)
     {
         _serv = cli._serv;
-        _req = cli._req;
-        _resp = cli._resp;
+        this->req = cli.req;
+        this->resp = cli.resp;
         _raw_request = cli._raw_request;
     }
 }
@@ -26,8 +26,8 @@ Client &Client::operator=(Client const &cli)
     if (this != &cli)
     {
         _serv = cli._serv;
-        _req = cli._req;
-        _resp = cli._resp;
+        this->req = cli.req;
+        this->resp = cli.resp;
         _raw_request = cli._raw_request;
     }
 
@@ -58,31 +58,31 @@ bool    Client::feed(std::string input, size_t len)
 
 void        Client::setRequest(Request req)
 {
-    _req = req;
-    _resp.setRequest(req);
+    this->req = req;
+    this->resp.setRequest(req);
     return ;
 }
 
 std::string Client::getResponse()
 {
-    return (_resp.getResponse());
+    return (resp.getResponse());
 }
 
 bool        Client::keepAlive()
 {
-    return (_req.keepAlive());
+    return (req.keepAlive());
 }
 
 void        Client::clearContent()
 {
     _raw_request = "";
-    _req.clear();
-    _resp.clear();
+    req.clear();
+    resp.clear();
 }
 
 void        Client::buildResponse()
 {
-    _resp.buildResponse();
+    resp.buildResponse();
 }
 
 const struct timeval&   Client::getTime() const

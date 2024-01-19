@@ -48,10 +48,10 @@ int main(int ac, char **av)
         std::cout << "error: " << error << std::endl;
     }
 
-    /*for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
-    {
-        it->printServerInfo();
-    }*/
+    //for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); it++)
+    //{
+    //    it->printServerInfo();
+    //}
 
     ServerManager server_manager(servers);
     server_manager.setServers();
