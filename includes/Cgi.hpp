@@ -12,7 +12,7 @@
 class CgiHandler {
     public:
         CgiHandler();
-        CgiHandler(Request& request, Location& loc_ptr);
+        CgiHandler(Request& request, Location& loc_ptr, const std::string& host);
         CgiHandler(CgiHandler const &cgi);
         ~CgiHandler();
 
@@ -23,13 +23,19 @@ class CgiHandler {
         void                                setBody(const std::string& ebody);
         void                                printEnv();
 
+        /*setter & getter*/
+        void                                setCgiPath(const std::string& cgi_path);
+        const std::string&                  getCgiPath() const;
+
     private:
         std::map<std::string, std::string>  _env;
         std::string                         _body;
+        std::string                         _cgiPath;
 
         std::string                         _getPathInfo(const std::string& req_path, const std::vector<std::string>& exts);
         std::string                         _decodeQuery(std::string req_query);
-        void                                _setEnv(Request& request, Location& loc_ptr);
+        void                                _initEnv(Request& request, Location& loc_ptr, const std::string& host);
+        void                                _setEnv(Request& request, Location& loc_ptr, const std::string& host);
         char**                              _envToCstrArr() const;
 };
 

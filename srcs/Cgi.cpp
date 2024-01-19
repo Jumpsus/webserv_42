@@ -2,10 +2,10 @@
 
 CgiHandler::CgiHandler() {}
 
-CgiHandler::CgiHandler(Request& request, Location& loc_ptr)
+CgiHandler::CgiHandler(Request& request, Location& loc_ptr, const std::string& str_host)
 {
     this->_body = request.getBody();
-    this->_setEnv(request, loc_ptr);
+    this->_setEnv(request, loc_ptr, str_host);
 }
 
 CgiHandler::CgiHandler(CgiHandler const &cgi)
@@ -34,13 +34,26 @@ CgiHandler::~CgiHandler()
     this->_body.clear();
 }
 
+void    CgiHandler::setCgiPath(const std::string& cgi_path)
+{
+    this->_cgiPath = cgi_path;
+}
+
+const std::string&  CgiHandler::getCgiPath() const
+{
+    return this->_cgiPath;
+}
+
 /*_env variables sources 
 1) https://linux.die.net/man/5/cgi
 2) https://docs.fileformat.com/th/executable/cgi/#google_vignette (thai)
 */
 
-void CgiHandler::_setEnv(Request& request, Location& loc_ptr)
+void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string& host)
 {
+    /*get CGI path & extensions*/
+
+    /*set env variables per reqeust file*/
     std::map<std::string, std::string> headers = request.getHeader();
     if (headers.find("Auth-Scheme") != headers.end() && headers["Auth-Scheme"] != "")
         this->_env["AUTH_TYPE"] = headers["authorization"];
@@ -59,11 +72,17 @@ void CgiHandler::_setEnv(Request& request, Location& loc_ptr)
     this->_env["PATH_INFO"] = _getPathInfo(request.getPath(), loc_ptr.getCgiExt());
     this->_env["PATH_TRANSLATED"] = loc_ptr.getRoot() + (this->_env["PATH_INFO"] == "" ? "/" : this->_env["PATH_INFO"]);
     this->_env["QUERY_STRING"] = _decodeQuery(request.getQuery());
-    this->_env["REMOTE_ADDR"] = headers["host"]; //currently consider adding DNS search
+
+    /*set basic CGI variable*/
+    std::string file_path = this->_cgiPath;
+    size_t      pos = this->_cgiPath.find("cgi-bin/");
+    this->_env["SCRIPT_NAME"] = file_path.substr(pos, this->_cgiPath.length() - pos);
+    this->_env{"SCRIPT_FILENAME"} = this->_cgiPath;
+    this->_env["REMOTE_ADDR"] = host;
     this->_env["SERVER_NAME"] = splitString(headers["host"], ":");
     this->_env["SERVER_PORT"] = headers["host"].substr(this->_env["SERVER_NAME"].length() + 1, headers["host"].length());
     this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-    this->_env["SERVER_SOFTWARE"] = "NGINX";
+    this->_env["SERVER_SOFTWARE"] = "WEBSERV";
     headers.clear();
     this->_body = request.getBody();
 }
