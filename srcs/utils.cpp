@@ -505,3 +505,67 @@ std::string mapStatusCode(int status)
 
     return("UNKNOWN");
 }
+
+std::string     mapContentType(std::string file)
+{
+    std::string extension = getExtension(file);
+
+    if (extension == "txt") 
+        return ("text/plain");
+    if (extension == "htm" || extension == "html") 
+        return ("text/html");
+    if (extension == "css") 
+        return ("text/css");
+    if (extension == "csv") 
+        return ("text/csv");
+    if (extension == "js") 
+        return ("text/javascript");
+    if (extension == "apng") 
+        return ("image/apng");
+    if (extension == "avif") 
+        return ("image/avif");
+    if (extension == "gif") 
+        return ("image/gif");
+    if (extension == "jpg" || extension == "jpeg") 
+        return ("image/jpeg");
+    if (extension == "png") 
+        return ("image/png");
+    if (extension == "svg") 
+        return ("image/svg+xml");
+    if (extension == "webp") 
+        return ("image/webp");
+    if (extension == "ico") 
+        return ("image/vnd.microsoft.icon");
+    if (extension == "avi") 
+        return ("video/x-msvideo");
+    if (extension == "bin") 
+        return ("application/octet-stream");
+    if (extension == "json") 
+        return ("application/json");
+    if (extension == "gz") 
+        return ("application/gzip");
+    if (extension == "doc")	     
+        return ("application/msword");
+    if (extension == "php")	     
+        return ("application/x-httpd-php");
+    if (extension == "pdf")	     
+        return ("application/pdf");
+    if (extension == "json")	     
+        return ("application/json");
+    if (extension == "xml")	     
+        return ("application/xml");
+    if (extension == "mp3") 
+        return ("audio/mpeg");
+    if (extension == "mp4") 
+        return ("audio/mp4");
+    if (extension == "webm") 
+        return ("audio/webm");
+    if (extension == "ttf") 
+        return ("font/ttf");
+    if (extension == "woof") 
+        return ("font/woof");
+    if (extension == "woof2") 
+        return ("font/woof2");
+        
+    return ("text/plain");
+}

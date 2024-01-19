@@ -137,7 +137,7 @@ void        Response::appendFirstLine()
 
 void        Response::createHeaders()
 {
-    _header["Content-Type"] = "text/html"; // TODO Edit this
+    _header["Content-Type"] = mapContentType(_target_file);
     _header["Content-Length"] = ft_to_string(_body.length());
 }
 
