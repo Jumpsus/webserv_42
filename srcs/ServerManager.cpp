@@ -69,7 +69,7 @@ void    ServerManager::startServers()
     fd_set          current_write;
     struct timeval  timeout;
 
-    timeout.tv_sec  = 1 * 60 /2;
+    timeout.tv_sec  = 20 * 60 /2;
     timeout.tv_usec = 0;
 
     this->startlisten();
