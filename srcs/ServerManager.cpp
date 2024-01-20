@@ -249,9 +249,9 @@ void    ServerManager::writeResponse(int write_fd)
 
     if (_clients_map[write_fd].req.keepAlive())
     {
+        _clients_map[write_fd].clearContent();
         removeSet(write_fd, &_write_fd);
         addSet(write_fd, &_read_fd);
-        _clients_map[write_fd].clearContent();
     } else {
         closeConnection(write_fd);
     }

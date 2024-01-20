@@ -105,13 +105,19 @@ int         Response::buildBody()
 void        Response::buildErrorBody()
 {
     _body = "";
-    // if (_error_page.count(_error) > 0)
-    // {
-    //     return ;
-    // }
-
-    setDefaultErrorFile(_error);
-    readFile(_target_file, _body);
+    if (_error_map.count(_error) > 0)
+    {
+        _location =  _error_map[_error];
+        if (_location[0] != '/')
+        {
+            _location = "/" + _location;
+        }
+        _status = 302;
+        return ;
+    } else {
+        setDefaultErrorFile(_error);
+        readFile(_target_file, _body);
+    }
 }
 
 void        Response::setDefaultErrorFile(int error)
@@ -139,6 +145,7 @@ void        Response::createHeaders()
 {
     _header["Content-Type"] = mapContentType(_target_file);
     _header["Content-Length"] = ft_to_string(_body.length());
+    _header["Location"] = _location;
 }
 
 void        Response::appendHeaders()
@@ -193,5 +200,6 @@ void        Response::clear()
     this->_error = 0;
     this->_body = "";
     this->_target_file = "";
+    this->_location = "";
     _request.clear();
 }
