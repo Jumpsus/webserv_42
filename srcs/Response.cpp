@@ -83,12 +83,53 @@ void        Response::buildResponse()
 
 int         Response::buildBody()
 {
-    if (findMatchLocation())
+    Location    loc;
+
+    if (findMatchLocation(loc))
     {
         // Case use parameter from location in server;
+
+        // check max body size 
+        if (loc.getClientMaxBodySize() < _request.getBody().length())
+        {
+            _error = 413;
+            return (1);
+        }
+
+        // check allow method
+        if (!loc.getAllowMethod().at(_request.getMethod()))
+        {
+            _error = 405;
+            return (1);
+        }
+
+        // check return
+        if (!loc.getReturn().empty())
+        {
+            _location = loc.getReturn();
+            if (_location[0] != '/')
+            {
+                _location = "/" + _location;
+            }
+            _error = 301;
+            return (1);
+        }
+
+        //handle alias
+        if (!loc.getAlias().empty())
+        {
+            _target_file = ft_join(loc.getAlias(), _request.getPath().substr(0, loc.getPath().length()));
+        } else {
+            _target_file = ft_join(loc.getRoot(), _request.getPath());
+        }
+
+        std::string file_extension;
+
+        file_extension = getExtension(_request.getPath());
+        // _target_file = loc.getRoot() + _request.getPath();
     } else {
         // Case use parameter from server;
-        _target_file = _server.getRoot() + _request.getPath();
+        _target_file = ft_join(_server.getRoot(), _request.getPath());
 
         if (!readFile(_target_file, _body))
         {
@@ -105,7 +146,7 @@ int         Response::buildBody()
 void        Response::buildErrorBody()
 {
     _body = "";
-    if (_error_map.count(_error) > 0)
+    if (_error_map.count(_error) > 0 && (_error >= 400 && _error < 500))
     {
         _location =  _error_map[_error];
         if (_location[0] != '/')
@@ -115,8 +156,7 @@ void        Response::buildErrorBody()
         _status = 302;
         return ;
     } else {
-        setDefaultErrorFile(_error);
-        readFile(_target_file, _body);
+        _body = defaultErrorPage(_error);
     }
 }
 
@@ -146,6 +186,9 @@ void        Response::createHeaders()
     _header["Content-Type"] = mapContentType(_target_file);
     _header["Content-Length"] = ft_to_string(_body.length());
     _header["Location"] = _location;
+
+    if (_request.getHeader().count("connection") != 0)
+       _header["Connection"] = _request.getHeader().at("connection");
 }
 
 void        Response::appendHeaders()
@@ -170,7 +213,7 @@ void        Response::appendBody()
     std::cout << "body = " << _body << std::endl;
 }
 
-bool        Response::findMatchLocation()
+bool        Response::findMatchLocation(Location &loc)
 {
     std::vector<Location>           locs = _server.getLocations();
     
@@ -181,6 +224,7 @@ bool        Response::findMatchLocation()
             if (it->getPath().length() > _location.length())
             {
                 _location = it->getPath();
+                loc = *it;
             }
         }
     }

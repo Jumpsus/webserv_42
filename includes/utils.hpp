@@ -25,6 +25,7 @@ bool                                readFile(std::string file_location, std::str
 std::string                         getExtension(std::string file);
 std::string                         mapContentType(std::string extension);
 std::string                         mapStatusCode(int status);
+std::string                         defaultErrorPage(int error);
 
 bool                                ft_isdigit(const std::string& input);
 bool                                ft_ishex(std::string input);
@@ -38,5 +39,6 @@ std::string                         ft_to_string(size_t num);
 bool                                ft_is_white_space(char c);
 std::string                         ft_trimspace(std::string input);
 bool                                ft_isURI(const std::string& word);
+std::string                         ft_join(std::string path1, std::string path2);
 
 #endif

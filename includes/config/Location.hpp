@@ -10,6 +10,7 @@ class Server;
 /* syntax: https://nginx.org/en/docs/http/ngx_http_core_module.html#location */
 class Location {
     public:
+        Location();
         Location(std::string const locationConfig ,Server const &serv);
         Location(Location const &loc);
         Location &operator=(Location const &loc);
@@ -18,10 +19,14 @@ class Location {
         void printLocationInfo();
 
         /*getters*/
-        const std::string&              getPath() const;
-        const std::string&              getRoot() const;
-        const std::vector<std::string>& getCgiPath() const;
-        const std::vector<std::string>& getCgiExt() const;
+        const std::string&                  getPath() const;
+        const std::string&                  getRoot() const;
+        const std::vector<std::string>&     getCgiPath() const;
+        const std::vector<std::string>&     getCgiExt() const;
+        const size_t&                       getClientMaxBodySize() const;
+        const std::map<std::string, bool>&  getAllowMethod() const;
+        const std::string&                  getReturn() const;
+        const std::string&                  getAlias() const;
     private:
         std::string                     _path;
         std::string                     _root;

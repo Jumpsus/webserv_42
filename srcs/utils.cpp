@@ -399,6 +399,21 @@ bool    ft_isURI(const std::string& word)
     return (true);
 }
 
+std::string ft_join(std::string path1, std::string path2)
+{
+    if (path1[path1.length() - 1] == '/' && path2[0] == '/')
+    {
+        return (path1.substr(0, path1.length() - 1) + path2);
+    }
+
+    if (path1[path1.length() - 1] != '/' && path2[0] != '/')
+    {
+        return (path1 + "/" + path2);
+    }
+
+    return (path1 + path2);
+}
+
 std::string getExtension(std::string file)
 {
     std::string ext = "";
@@ -568,4 +583,16 @@ std::string     mapContentType(std::string file)
         return ("font/woof2");
         
     return ("text/plain");
+}
+
+std::string defaultErrorPage(int error)
+{
+    std::string errorPage;
+
+    errorPage = "<html>\r\n<head>\r\n<title>" + ft_to_string(error) +
+                " " + mapStatusCode(error) + "</title>\r\n</head>\r\n" +
+                "<body>\r\n<h1>" + ft_to_string(error) + " " + 
+                mapStatusCode(error)+ "</h1>\r\n</body>\r\n</html>" ;
+
+    return (errorPage);
 }
