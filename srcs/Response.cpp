@@ -123,10 +123,20 @@ int         Response::buildBody()
             _target_file = ft_join(loc.getRoot(), _request.getPath());
         }
 
+        
         std::string file_extension;
 
         file_extension = getExtension(_request.getPath());
-        // _target_file = loc.getRoot() + _request.getPath();
+
+
+        // auto index 
+        /*
+            https://www.oreilly.com/library/view/nginx-http-server/
+            9781788623551/052b1381-d911-46df-8bd2-1bebf70f44b8.xhtml
+            #:~:text=Description,Syntax%3A%20on%20or%20off
+        */
+
+
     } else {
         // Case use parameter from server;
         _target_file = ft_join(_server.getRoot(), _request.getPath());

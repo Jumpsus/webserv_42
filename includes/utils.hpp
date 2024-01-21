@@ -10,6 +10,7 @@
 # include <iostream>
 # include <fstream>
 # include <string>
+# include <sys/stat.h>
 
 # define s_iter std::vector<std::string>::iterator
 
@@ -25,6 +26,8 @@ bool                                readFile(std::string file_location, std::str
 std::string                         getExtension(std::string file);
 std::string                         mapContentType(std::string extension);
 std::string                         mapStatusCode(int status);
+bool                                isFileExists(std::string file_location);
+bool                                isDirectory(std::string file_location);
 std::string                         defaultErrorPage(int error);
 
 bool                                ft_isdigit(const std::string& input);

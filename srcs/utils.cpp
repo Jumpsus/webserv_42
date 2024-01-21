@@ -585,6 +585,24 @@ std::string     mapContentType(std::string file)
     return ("text/plain");
 }
 
+bool    isFileExists(std::string file_location)
+{
+    std::ifstream file(file_location.c_str());
+    return (file.good());
+}
+
+bool    isDirectory(std::string file_location)
+{
+    struct stat s;
+
+    if( stat(file_location.c_str(), &s) == 0 )
+    {
+        return ( s.st_mode & S_IFDIR );
+    }
+
+    return (false);
+}
+
 std::string defaultErrorPage(int error)
 {
     std::string errorPage;
