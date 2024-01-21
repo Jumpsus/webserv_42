@@ -110,6 +110,16 @@ const std::string& Location::getAlias() const
     return _alias;
 }
 
+const std::string& Location::getIndex() const
+{
+    return _index[0];
+}
+
+const bool& Location::getAutoIndex() const
+{
+    return _autoindex;
+}
+
 void    Location::parseLocation(std::string locationConfig)
 {
     size_t                      index = 0;

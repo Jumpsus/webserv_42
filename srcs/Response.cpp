@@ -123,12 +123,6 @@ int         Response::buildBody()
             _target_file = ft_join(loc.getRoot(), _request.getPath());
         }
 
-        
-        std::string file_extension;
-
-        file_extension = getExtension(_request.getPath());
-
-
         // auto index 
         /*
             https://www.oreilly.com/library/view/nginx-http-server/
@@ -136,6 +130,44 @@ int         Response::buildBody()
             #:~:text=Description,Syntax%3A%20on%20or%20off
         */
 
+        if (isDirectory(_target_file))
+        {
+            if (_target_file[_target_file.length() - 1] != '/')
+            {
+                _status = 301;
+                _location = _request.getPath() + "/";
+                return (1);
+            }
+
+            if (!isFileExists(_target_file + loc.getIndex()))
+            {
+                if (loc.getAutoIndex())
+                {
+                    // TODO: handle auto index
+                    // _body = "";
+                    return (0);
+                } else {
+                    _error = 403;
+                    return (1);
+                }
+            }
+
+            _target_file = _target_file + loc.getIndex();
+        }
+
+        if (loc.getCgiExt().size() != 0)
+        {
+            std::string file_extension = "." + getExtension(_request.getPath());
+            std::vector<std::string> cgi_ext = loc.getCgiExt();
+
+            for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
+            {
+                if (file_extension == (*it))
+                {
+                    // TODO: handle cgi
+                }
+            }
+        }
 
     } else {
         // Case use parameter from server;

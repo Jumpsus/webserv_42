@@ -27,6 +27,9 @@ class Location {
         const std::map<std::string, bool>&  getAllowMethod() const;
         const std::string&                  getReturn() const;
         const std::string&                  getAlias() const;
+        const std::string&                  getIndex() const;
+        const bool&                         getAutoIndex() const;
+
     private:
         std::string                     _path;
         std::string                     _root;
