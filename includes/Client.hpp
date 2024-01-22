@@ -26,6 +26,9 @@ class Client {
         void            clearContent();
 
         void            buildResponse();
+        
+        Request             req;
+        Response            resp;
 
         const struct timeval&   getTime() const; //get time stamp
         void                    updateTime(); //update time stamp
@@ -33,8 +36,7 @@ class Client {
     private:
         int                 _socket_fd;
         Server              _serv;
-        Request             _req;
-        Response            _resp;
+        
         struct timeval      _time_stamp;
 
         std::string         _raw_request;

@@ -95,7 +95,7 @@ class Response {
 
         int                                 buildBody();
         void                                buildErrorBody();
-        bool                                findMatchLocation();
+        bool                                findMatchLocation(Location &loc);
 
         void                                setDefaultErrorFile(int error);
 };

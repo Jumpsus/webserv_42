@@ -1,5 +1,7 @@
 #include "config/Location.hpp"
 
+Location::Location() {}
+
 Location::Location(std::string const locationConfig ,Server const &serv)
 {
     this->_root = serv.getRoot();
@@ -88,6 +90,36 @@ const std::vector<std::string>& Location::getCgiExt() const
     return _cgi_ext;
 }
 
+const size_t&   Location::getClientMaxBodySize() const
+{
+    return _client_max_body_size;
+}
+
+const std::map<std::string, bool>&   Location::getAllowMethod() const
+{
+    return _allow_methods;
+}
+
+const std::string& Location::getReturn() const
+{
+    return _return;
+}
+
+const std::string& Location::getAlias() const
+{
+    return _alias;
+}
+
+const std::string& Location::getIndex() const
+{
+    return _index[0];
+}
+
+const bool& Location::getAutoIndex() const
+{
+    return _autoindex;
+}
+
 void    Location::parseLocation(std::string locationConfig)
 {
     size_t                      index = 0;
@@ -174,11 +206,11 @@ bool Location::setLocationParameter(std::string param, std::vector<std::string> 
         std::vector<std::string>::iterator itMethods;
         for (itMethods = value.begin(); itMethods != value.end(); itMethods++)
         {
-            if (this->_allow_methods.find(*itMethods) == this->_allow_methods.end())
+            if (this->_allow_methods.find(ft_toupper(*itMethods)) == this->_allow_methods.end())
             {
                 return false;
             } 
-            this->_allow_methods[*itMethods] = true;
+            this->_allow_methods[ft_toupper(*itMethods)] = true;
         }
 
     } else if (param == "return") {

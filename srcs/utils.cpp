@@ -376,6 +376,7 @@ bool     readFile(std::string file_location, std::string& buffer)
             std::getline(file, temp_string);
             buffer.append(temp_string);
             buffer.append("\n");
+            temp_string = "";
         }
         file.close();
     } else {
@@ -398,6 +399,21 @@ bool    ft_isURI(const std::string& word)
     return (true);
 }
 
+std::string ft_join(std::string path1, std::string path2)
+{
+    if (path1[path1.length() - 1] == '/' && path2[0] == '/')
+    {
+        return (path1.substr(0, path1.length() - 1) + path2);
+    }
+
+    if (path1[path1.length() - 1] != '/' && path2[0] != '/')
+    {
+        return (path1 + "/" + path2);
+    }
+
+    return (path1 + path2);
+}
+
 std::string getExtension(std::string file)
 {
     std::string ext = "";
@@ -412,4 +428,189 @@ std::string getExtension(std::string file)
     }
 
     return "";
+}
+
+std::string mapStatusCode(int status)
+{
+    switch (status)
+    {
+        case 100:
+            return("Continue");
+        case 101:
+            return("Switching Protocols");
+        case 200:
+            return("OK");
+        case 201:
+            return("Created");
+        case 202:
+            return("Accepted");
+        case 203:
+            return("Non-Authoritative Information");
+        case 204:
+            return("No Content");
+        case 205:
+            return("Reset Content");
+        case 206:
+            return("Partial Content");
+        case 300:
+            return("Multiple Choices");
+        case 301:
+            return("Moved Permanently");
+        case 302:
+            return("Found");
+        case 303:
+            return("See Other");
+        case 304:
+            return("Not Modified");
+        case 305:
+            return("Use Proxy");
+        case 307:
+            return("Temporary Redirect");
+        case 400:
+            return("Bad Request");
+        case 401:
+            return("Unauthorized");
+        case 402:
+            return("Payment Required");
+        case 403:
+            return("Forbidden");
+        case 404:
+            return("Not Found");
+        case 405:
+            return("Method Not Allowed");
+        case 406:
+            return("Not Acceptable");
+        case 407:
+            return("Proxy Authentication Required");
+        case 408:
+            return("Request Timeout");
+        case 409:
+            return("Conflict");
+        case 410:
+            return("Gone");
+        case 411:
+            return("Length Required");
+        case 412:
+            return("Precondition Failed");
+        case 413:
+            return("Payload Too Large");
+        case 414:
+            return("URI Too Long");
+        case 415:
+            return("Unsupported Media Type");
+        case 416:
+            return("Range Not Satisfiable");
+        case 417:
+            return("Expectation Failed");
+        case 426:
+            return("Upgrade Required");
+        case 500:
+            return("Internal Server Error");
+        case 501:
+            return("Not Implemented");
+        case 502:
+            return("Bad Gateway");
+        case 503:
+            return("Service Unavailable");
+        case 504:
+            return("Gateway Timeout");
+        case 505:
+            return("HTTP Version Not Supported");
+    }
+
+    return("UNKNOWN");
+}
+
+std::string     mapContentType(std::string file)
+{
+    std::string extension = getExtension(file);
+
+    if (extension == "txt") 
+        return ("text/plain");
+    if (extension == "htm" || extension == "html") 
+        return ("text/html");
+    if (extension == "css") 
+        return ("text/css");
+    if (extension == "csv") 
+        return ("text/csv");
+    if (extension == "js") 
+        return ("text/javascript");
+    if (extension == "apng") 
+        return ("image/apng");
+    if (extension == "avif") 
+        return ("image/avif");
+    if (extension == "gif") 
+        return ("image/gif");
+    if (extension == "jpg" || extension == "jpeg") 
+        return ("image/jpeg");
+    if (extension == "png") 
+        return ("image/png");
+    if (extension == "svg") 
+        return ("image/svg+xml");
+    if (extension == "webp") 
+        return ("image/webp");
+    if (extension == "ico") 
+        return ("image/vnd.microsoft.icon");
+    if (extension == "avi") 
+        return ("video/x-msvideo");
+    if (extension == "bin") 
+        return ("application/octet-stream");
+    if (extension == "json") 
+        return ("application/json");
+    if (extension == "gz") 
+        return ("application/gzip");
+    if (extension == "doc")	     
+        return ("application/msword");
+    if (extension == "php")	     
+        return ("application/x-httpd-php");
+    if (extension == "pdf")	     
+        return ("application/pdf");
+    if (extension == "json")	     
+        return ("application/json");
+    if (extension == "xml")	     
+        return ("application/xml");
+    if (extension == "mp3") 
+        return ("audio/mpeg");
+    if (extension == "mp4") 
+        return ("audio/mp4");
+    if (extension == "webm") 
+        return ("audio/webm");
+    if (extension == "ttf") 
+        return ("font/ttf");
+    if (extension == "woof") 
+        return ("font/woof");
+    if (extension == "woof2") 
+        return ("font/woof2");
+        
+    return ("text/plain");
+}
+
+bool    isFileExists(std::string file_location)
+{
+    std::ifstream file(file_location.c_str());
+    return (file.good());
+}
+
+bool    isDirectory(std::string file_location)
+{
+    struct stat s;
+
+    if( stat(file_location.c_str(), &s) == 0 )
+    {
+        return ( s.st_mode & S_IFDIR );
+    }
+
+    return (false);
+}
+
+std::string defaultErrorPage(int error)
+{
+    std::string errorPage;
+
+    errorPage = "<html>\r\n<head>\r\n<title>" + ft_to_string(error) +
+                " " + mapStatusCode(error) + "</title>\r\n</head>\r\n" +
+                "<body>\r\n<h1>" + ft_to_string(error) + " " + 
+                mapStatusCode(error)+ "</h1>\r\n</body>\r\n</html>" ;
+
+    return (errorPage);
 }

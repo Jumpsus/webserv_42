@@ -10,6 +10,7 @@
 # include <iostream>
 # include <fstream>
 # include <string>
+# include <sys/stat.h>
 
 # define s_iter std::vector<std::string>::iterator
 
@@ -23,6 +24,11 @@ size_t                              shiftBlock(const std::string& src, const std
 std::string                         findNextWord(std::string src);
 bool                                readFile(std::string file_location, std::string& buffer);
 std::string                         getExtension(std::string file);
+std::string                         mapContentType(std::string extension);
+std::string                         mapStatusCode(int status);
+bool                                isFileExists(std::string file_location);
+bool                                isDirectory(std::string file_location);
+std::string                         defaultErrorPage(int error);
 
 bool                                ft_isdigit(const std::string& input);
 bool                                ft_ishex(std::string input);
@@ -36,5 +42,6 @@ std::string                         ft_to_string(size_t num);
 bool                                ft_is_white_space(char c);
 std::string                         ft_trimspace(std::string input);
 bool                                ft_isURI(const std::string& word);
+std::string                         ft_join(std::string path1, std::string path2);
 
 #endif

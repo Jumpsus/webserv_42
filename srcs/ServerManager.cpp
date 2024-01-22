@@ -69,7 +69,7 @@ void    ServerManager::startServers()
     fd_set          current_write;
     struct timeval  timeout;
 
-    timeout.tv_sec  = 1 * 60 /2;
+    timeout.tv_sec  = 20 * 60 /2;
     timeout.tv_usec = 0;
 
     this->startlisten();
@@ -103,11 +103,17 @@ void    ServerManager::startServers()
                 receiveRequest(i);
                 ready--;
             } else if (FD_ISSET(i, &current_write)) {
-                writeResponse(i);
+            //    int cgi_status = _clients_map[i].getCgiStatus();
+            //    if (cgi_status == 1 && FD_ISSET(_clients_map[i]._cgi.pipe_in[1], &current_write))
+            //        writeCgi(i);
+            //    else if (cgi_status == 1 && FD_ISSET(_clients_map[i],_cgi.pipe_out[0], &current_read))
+            //        readCgi(i);
+            //    else        
+                    writeResponse(i);
                 ready--;
             }
         }
-
+        //checkTimeout();
     } while(1);
 
     std::cout << "graceful exit()" << std::endl;
@@ -193,7 +199,6 @@ void    ServerManager::acceptConnection(int server_fd)
 
 void    ServerManager::receiveRequest(int read_fd)
 {
-    std::cout << "start recv " << std::endl;
     char buffer[CLIENT_BUFFER];
 
     /* After recv fd is set not ready for read until Client cancelled connection */
@@ -207,10 +212,13 @@ void    ServerManager::receiveRequest(int read_fd)
 
     if (rc > 0) {
         std::string req(buffer);
+        _clients_map[read_fd].updateTime();
         if (_clients_map[read_fd].feed(req, rc))
         {
             removeSet(read_fd, &_read_fd);
             addSet(read_fd, &_write_fd);
+        //    std::cout << "Request Recived From Socket " << read_fd << " Method = " << 
+        //             _clients_map[read_fd].req.getMethod() << " URI = " << _clients_map[read_fd].req.getPath() << std::endl;
             _clients_map[read_fd].buildResponse();
         }
         memset(buffer, 0, sizeof(buffer));
@@ -226,7 +234,6 @@ void    ServerManager::receiveRequest(int read_fd)
 
 void    ServerManager::writeResponse(int write_fd)
 {
-    std::cout << "start recv " << std::endl;
     std::string resp = _clients_map[write_fd].getResponse();
 
     std::cout << "Response = " << resp << std::endl;
@@ -240,7 +247,14 @@ void    ServerManager::writeResponse(int write_fd)
         return ;
     }
 
-    closeConnection(write_fd);
+    if (_clients_map[write_fd].req.keepAlive())
+    {
+        _clients_map[write_fd].clearContent();
+        removeSet(write_fd, &_write_fd);
+        addSet(write_fd, &_read_fd);
+    } else {
+        closeConnection(write_fd);
+    }
 }
 
 void    ServerManager::addSet(int fd, fd_set* set)
@@ -297,3 +311,19 @@ void    ServerManager::closeConnection(int fd)
     close(fd);
     _clients_map.erase(fd);
 }
+
+/*void    ServerManager::checkTimeout()
+{
+    for (std::map<int, Client>::iterator cit = _clients_map.begin(); cit != _clients_map.end(); cit++)
+    {
+        struct timeval  sm_curr;
+        gettimeofday(&sm_curr, NULL);
+        if (sm_curr.tv_sec - cit->second.getTime().tv_sec > CONNECTION_TIMEOUT)
+        {
+            cit->second.req.setError(504); //IDK if this is the same as Google Chrome?
+            std::cout << "Connection timeout" << std::endl;
+            closeConnection(cit->first);
+            return ;
+        }   
+    }
+}*/

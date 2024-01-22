@@ -344,6 +344,7 @@ void    Request::setPath(std::string uri)
     } else {
         this->_path = uri.substr(0, found);
         temp = uri.substr(found + 1, uri.length());
+        found = temp.find('#');
         if (found == std::string::npos) {
             this->_query = temp;
         } else {

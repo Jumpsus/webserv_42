@@ -83,12 +83,95 @@ void        Response::buildResponse()
 
 int         Response::buildBody()
 {
-    if (findMatchLocation())
+    Location    loc;
+
+    if (findMatchLocation(loc))
     {
         // Case use parameter from location in server;
+
+        // check max body size 
+        if (loc.getClientMaxBodySize() < _request.getBody().length())
+        {
+            _error = 413;
+            return (1);
+        }
+
+        // check allow method
+        if (!loc.getAllowMethod().at(_request.getMethod()))
+        {
+            _error = 405;
+            return (1);
+        }
+
+        // check return
+        if (!loc.getReturn().empty())
+        {
+            _location = loc.getReturn();
+            if (_location[0] != '/')
+            {
+                _location = "/" + _location;
+            }
+            _error = 301;
+            return (1);
+        }
+
+        //handle alias
+        if (!loc.getAlias().empty())
+        {
+            _target_file = ft_join(loc.getAlias(), _request.getPath().substr(0, loc.getPath().length()));
+        } else {
+            _target_file = ft_join(loc.getRoot(), _request.getPath());
+        }
+
+        // auto index 
+        /*
+            https://www.oreilly.com/library/view/nginx-http-server/
+            9781788623551/052b1381-d911-46df-8bd2-1bebf70f44b8.xhtml
+            #:~:text=Description,Syntax%3A%20on%20or%20off
+        */
+
+        if (isDirectory(_target_file))
+        {
+            if (_target_file[_target_file.length() - 1] != '/')
+            {
+                _status = 301;
+                _location = _request.getPath() + "/";
+                return (1);
+            }
+
+            if (!isFileExists(_target_file + loc.getIndex()))
+            {
+                if (loc.getAutoIndex())
+                {
+                    // TODO: handle auto index
+                    // _body = "";
+                    return (0);
+                } else {
+                    _error = 403;
+                    return (1);
+                }
+            }
+
+            _target_file = _target_file + loc.getIndex();
+        }
+
+        if (loc.getCgiExt().size() != 0)
+        {
+            std::string file_extension = "." + getExtension(_request.getPath());
+            std::vector<std::string> cgi_ext = loc.getCgiExt();
+
+            for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
+            {
+                if (file_extension == (*it))
+                {
+                    // TODO: handle cgi
+                }
+            }
+        }
+
     } else {
         // Case use parameter from server;
-        _target_file = _server.getRoot() + _request.getPath();
+        _target_file = ft_join(_server.getRoot(), _request.getPath());
 
         if (!readFile(_target_file, _body))
         {
@@ -105,13 +188,18 @@ int         Response::buildBody()
 void        Response::buildErrorBody()
 {
     _body = "";
-    // if (_error_page.count(_error) > 0)
-    // {
-    //     return ;
-    // }
-
-    setDefaultErrorFile(_error);
-    readFile(_target_file, _body);
+    if (_error_map.count(_error) > 0 && (_error >= 400 && _error < 500))
+    {
+        _location =  _error_map[_error];
+        if (_location[0] != '/')
+        {
+            _location = "/" + _location;
+        }
+        _status = 302;
+        return ;
+    } else {
+        _body = defaultErrorPage(_error);
+    }
 }
 
 void        Response::setDefaultErrorFile(int error)
@@ -131,102 +219,18 @@ std::string Response::getResponse()
 void        Response::appendFirstLine()
 {
     _response_content = "HTTP/1.1 " + ft_to_string(_status) + " ";
-
-    switch (_status)
-    {
-        case 100:
-            _response_content.append("Continue"); break;
-        case 101:
-            _response_content.append("Switching Protocols"); break;
-        case 200:
-            _response_content.append("OK"); break;
-        case 201:
-            _response_content.append("Created"); break;
-        case 202:
-            _response_content.append("Accepted"); break;
-        case 203:
-            _response_content.append("Non-Authoritative Information"); break;
-        case 204:
-            _response_content.append("No Content"); break;
-        case 205:
-            _response_content.append("Reset Content"); break;
-        case 206:
-            _response_content.append("Partial Content"); break;
-        case 300:
-            _response_content.append("Multiple Choices"); break;
-        case 301:
-            _response_content.append("Moved Permanently"); break;
-        case 302:
-            _response_content.append("Found"); break;
-        case 303:
-            _response_content.append("See Other"); break;
-        case 304:
-            _response_content.append("Not Modified"); break;
-        case 305:
-            _response_content.append("Use Proxy"); break;
-        case 307:
-            _response_content.append("Temporary Redirect"); break;
-        case 400:
-            _response_content.append("Bad Request"); break;
-        case 401:
-            _response_content.append("Unauthorized"); break;
-        case 402:
-            _response_content.append("Payment Required"); break;
-        case 403:
-            _response_content.append("Forbidden"); break;
-        case 404:
-            _response_content.append("Not Found"); break;
-        case 405:
-            _response_content.append("Method Not Allowed"); break;
-        case 406:
-            _response_content.append("Not Acceptable"); break;
-        case 407:
-            _response_content.append("Proxy Authentication Required"); break;
-        case 408:
-            _response_content.append("Request Timeout"); break;
-        case 409:
-            _response_content.append("Conflict"); break;
-        case 410:
-            _response_content.append("Gone"); break;
-        case 411:
-            _response_content.append("Length Required"); break;
-        case 412:
-            _response_content.append("Precondition Failed"); break;
-        case 413:
-            _response_content.append("Payload Too Large"); break;
-        case 414:
-            _response_content.append("URI Too Long"); break;
-        case 415:
-            _response_content.append("Unsupported Media Type"); break;
-        case 416:
-            _response_content.append("Range Not Satisfiable"); break;
-        case 417:
-            _response_content.append("Expectation Failed"); break;
-        case 426:
-            _response_content.append("Upgrade Required"); break;
-        case 500:
-            _response_content.append("Internal Server Error"); break;
-        case 501:
-            _response_content.append("Not Implemented"); break;
-        case 502:
-            _response_content.append("Bad Gateway"); break;
-        case 503:
-            _response_content.append("Service Unavailable"); break;
-        case 504:
-            _response_content.append("Gateway Timeout"); break;
-        case 505:
-            _response_content.append("HTTP Version Not Supported"); break;
-        default:
-            _response_content.append("Default");
-    }
-
+    _response_content.append(mapStatusCode(_status));
     _response_content.append("\r\n");
 }
 
 void        Response::createHeaders()
 {
-    _header["Content-Type"] = "text/html"; // TODO Edit this
+    _header["Content-Type"] = mapContentType(_target_file);
     _header["Content-Length"] = ft_to_string(_body.length());
+    _header["Location"] = _location;
+
+    if (_request.getHeader().count("connection") != 0)
+       _header["Connection"] = _request.getHeader().at("connection");
 }
 
 void        Response::appendHeaders()
@@ -248,9 +252,10 @@ void        Response::appendHeaders()
 void        Response::appendBody()
 {
     _response_content.append(_body);
+    std::cout << "body = " << _body << std::endl;
 }
 
-bool        Response::findMatchLocation()
+bool        Response::findMatchLocation(Location &loc)
 {
     std::vector<Location>           locs = _server.getLocations();
     
@@ -261,6 +266,7 @@ bool        Response::findMatchLocation()
             if (it->getPath().length() > _location.length())
             {
                 _location = it->getPath();
+                loc = *it;
             }
         }
     }
@@ -280,5 +286,6 @@ void        Response::clear()
     this->_error = 0;
     this->_body = "";
     this->_target_file = "";
+    this->_location = "";
     _request.clear();
 }
