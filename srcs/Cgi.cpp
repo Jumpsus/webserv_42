@@ -44,6 +44,17 @@ const std::string&  CgiHandler::getCgiPath() const
     return this->_cgiPath;
 }
 
+std::string CgiHandler::_getScriptFilename(const std::string& cgi_path)
+{
+    int pos = cgi_path.find("cgi-bin/");
+
+    if (pos == std::string::npos)
+        return "";
+    if (pos + 8 > (int)cgi_path.size())
+        return "";
+    return cgi_path.substr(pos + 8, cgi_path.size());
+}
+
 /*_env variables sources 
 1) https://linux.die.net/man/5/cgi
 2) https://docs.fileformat.com/th/executable/cgi/#google_vignette (thai)
@@ -51,8 +62,30 @@ const std::string&  CgiHandler::getCgiPath() const
 
 void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string& host)
 {
-    /*get CGI path & extensions*/
+   /*get CGI path & extensions
+    1) check if the path's extension is exist in the location setting
+    2) check if the path's extension have matching folder
+    3) parse the folder to args[0]
+    4) parse the path to args[1]
+    */
+    std::string extension = this->_cgiPath.substr(this->_cgiPath.find("."));
+    std::string args_0;
+    if (ft_find_by_keyword(loc_ptr.getCgiExt(), extension) == loc_ptr.getCgiExt().end())
+        return ;
+    if (extension == ".py" && ft_find_by_keyword(loc_ptr.getCgiPath(), "python") != loc_ptr.getCgiPath().end())
+        return ;
+    else
+        args_0 = *ft_find_by_keyword(loc_ptr.getCgiPath(), "python");
+    if (extension == ".sh" && ft_find_by_keyword(loc_ptr.getCgiPath(), "bash") != loc_ptr.getCgiPath().end())
+        return ;
+    else
+        args_0 = *ft_find_by_keyword(loc_ptr.getCgiPath(), "bash");
 
+    this->_args = (char**) malloc( sizeof(char*) * 3 );
+    this->_args[0] = strdup(args_0.c_str());
+    this->_args[1] = strdup(this->_cgiPath.c_str());
+    this->_args[2] = NULL;
+    
     /*set env variables per reqeust file*/
     std::map<std::string, std::string> headers = request.getHeader();
     if (headers.find("Auth-Scheme") != headers.end() && headers["Auth-Scheme"] != "")
@@ -74,10 +107,8 @@ void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string&
     this->_env["QUERY_STRING"] = _decodeQuery(request.getQuery());
 
     /*set basic CGI variable*/
-    std::string file_path = this->_cgiPath;
-    size_t      pos = this->_cgiPath.find("cgi-bin/");
-    this->_env["SCRIPT_NAME"] = file_path.substr(pos, this->_cgiPath.length() - pos);
-    this->_env["SCRIPT_FILENAME"] = this->_cgiPath;
+    this->_env["SCRIPT_NAME"] = this->_cgiPath;
+    this->_env["SCRIPT_FILENAME"] = _getScriptFilename(this->_cgiPath);
     this->_env["REMOTE_ADDR"] = host;
     this->_env["SERVER_NAME"] = splitString(headers["host"], ":");
     this->_env["SERVER_PORT"] = headers["host"].substr(this->_env["SERVER_NAME"].length() + 1, headers["host"].length());
@@ -85,6 +116,8 @@ void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string&
     this->_env["SERVER_SOFTWARE"] = "WEBSERV";
     headers.clear();
     this->_body = request.getBody();
+    char**  ret_args;
+    ret_args = (char**) malloc( sizeof(char*) * 3 );
 }
 
 void CgiHandler::setBody(const std::string& ebody)
@@ -108,70 +141,58 @@ char**  CgiHandler::_envToCstrArr() const
     return c_env;
 }
 
-std::string CgiHandler::execCgi(const std::string& script, int &error)
+void    CgiHandler::execCgi(Request &req, const Location& loc_ptr)
 {
-    pid_t   pid;
-    int     buf_stdin;
-    int     buf_stdout;
-    char    **env;
-    std::string retBody;
+    pid_t   cgi_pid;
+    char    **cgi_env = _envToCstrArr();
 
-    env = this->_envToCstrArr();
-    if (env[0] == NULL || env[1] == NULL)
-    {
-        error = 500;
-        return "";
+    //can't set _args
+    if (this->_args[0] == NULL || this->_args[1] == NULL) {
+        std::cerr << "Can't initiate args\n";
+        req.setError(500);
+        return ;
     }
-    buf_stdin = dup(STDIN_FILENO);
-    buf_stdout = dup(STDOUT_FILENO);
-
-    FILE    *fIn = tmpfile();
-    FILE    *fOut = tmpfile();
-    long    fdIn = fileno(fIn);
-    long    fdOut = fileno(fOut);
-    int     ret = 1;
-
-    write(fdIn, _body.c_str(), _body.size());
-    lseek(fdIn, 0, SEEK_SET);
-
-    pid = fork();
-    if (pid == -1)
-        error = 500;
-    else if (!pid)
-    {
-        dup2(fdIn, STDIN_FILENO);
-        dup2(fdOut, STDOUT_FILENO);
-        execve(script.c_str(), NULL, env);
-        write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
+    //can't set cgi_env
+    if (cgi_env[0] == NULL || cgi_env[1] == NULL) {
+        std::cerr << "Fail to create cgi env\n";
+        req.setError(500);
+        return ;
     }
-    else
-    {
-        char    buffer[CGI_BUFSIZE] = {0};
-
-        waitpid(-1, NULL, 0);
-        lseek(fdOut, 0, SEEK_SET);
-        ret = 1;
-        while (ret > 0)
-        {
-            memset(buffer, 0, CGI_BUFSIZE);
-            ret = read(fdOut, CGI_BUFSIZE - 1);
-            retBody += buffer;
+    //can't pipe pipe_in
+    if (pipe(pipe_in) < 0) {
+        std::cerr << "Fail to create pipe_in\n";
+        req.setError(500);
+        return ;
+    }
+    //can't pipe pipe_out
+    if (pipe(pipe_out) < 0) {
+        std::cerr << "Fail to create pipe_out\n";
+        close(pipe_in[0]);
+        close(pipe_in[1]);
+        req.setError(500);
+        return ;
+    }
+    //start fork process
+    cgi_pid = fork();
+    if (cgi_pid < 0) {
+        std::cerr << "Fail to fork\n";
+        
+        req.setError(500);
+        return ;
+    }
+    //successful fork
+    if (cgi_pid == 0) {
+        dup2(pipe_in[0], STDIN_FILENO);
+        dup2(pipe_out[1], STDOUT_FILENO);
+        close(pipe_in[0]);
+        close(pipe_in[1]);
+        close(pipe_out[0]);
+        close(pipe_out[1]);
+        if (execve(_args[0], _args, cgi_env)) {
+            std::cerr << "Fail to exec cgi script\n";
+            req.setError(500);
+            return ;
         }
-        dup2(buf_stdin, STDIN_FILENO);
-        dup2(buf_stdout, STDOUT_FILENO);
-        fclose(fIn);
-        fclose(fOut);
-        close(fdIn);
-        close(fdOut);
-        close(buf_stdin);
-        close(buf_stdout);
-        for (size_t i = 0; env[i]; i++)
-            delete[] env[i];
-        delete[] env;
-
-        if (!pid)
-            exit(0);
-        return (retBody);
     }
 }
 

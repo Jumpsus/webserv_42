@@ -51,7 +51,6 @@ bool    Client::feed(std::string input, size_t len)
         std::cout << "parse Request failed" << std::endl; 
         return false;
     }
-
     setRequest(r);
     return true;
 }
