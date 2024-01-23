@@ -103,12 +103,12 @@ void    ServerManager::startServers()
                 receiveRequest(i);
                 ready--;
             } else if (FD_ISSET(i, &current_write)) {
-            //    int cgi_status = _clients_map[i].getCgiStatus();
-            //    if (cgi_status == 1 && FD_ISSET(_clients_map[i]._cgi.pipe_in[1], &current_write))
-            //        writeCgi(i);
-            //    else if (cgi_status == 1 && FD_ISSET(_clients_map[i],_cgi.pipe_out[0], &current_read))
-            //        readCgi(i);
-            //    else        
+                bool cgi_status = _clients_map[i].resp.getCgiStatus();
+                if (cgi_status == true && FD_ISSET(_clients_map[i].resp.cgi.pipe_in[1], &current_write))
+                    writeCgi(i, _clients_map[i].resp.cgi);
+                else if (cgi_status == true && FD_ISSET(_clients_map[i].resp.cgi.pipe_out[0], &current_read))
+                    readCgi(i, _clients_map[i].resp.cgi);
+                else  if (cgi_status == false)        
                     writeResponse(i);
                 ready--;
             }
@@ -254,6 +254,74 @@ void    ServerManager::writeResponse(int write_fd)
         addSet(write_fd, &_read_fd);
     } else {
         closeConnection(write_fd);
+    }
+}
+
+void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
+{
+    std::string body = _clients_map[write_fd].req.getBody();
+    int         body_sent = body.length();
+    if (body_sent >= MESSAGE_BUFFER)
+        body_sent = write(cgi.pipe_in[1], body.c_str(), MESSAGE_BUFFER);
+    else if (body_sent > 0 && body_sent < MESSAGE_BUFFER)
+        body_sent = write(cgi.pipe_in[1], body.c_str(), body.length());
+    
+    if (body_sent < 0) {
+        std::cerr << "Fail to send body to cgi\n";
+        removeSet(cgi.pipe_in[1], &_write_fd);
+        close(cgi.pipe_in[1]);
+        close(cgi.pipe_out[1]);
+        _clients_map[write_fd].resp.setError(500);
+    }
+    else if (body_sent == 0) {
+        removeSet(cgi.pipe_in[1], &_write_fd);
+        close(cgi.pipe_in[1]);
+        close(cgi.pipe_out[1]);
+    }
+    else {
+        _clients_map[write_fd].updateTime();
+        body = body.substr(body_sent);
+    }
+
+}
+
+void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
+{
+    char    cgi_buff[MESSAGE_BUFFER * 3];
+    int     byte_read = read(cgi.pipe_out[0], cgi_buff, MESSAGE_BUFFER * 3);
+
+    if (byte_read > 0) {
+        _clients_map[read_fd].updateTime();
+
+        std::string resp_con = _clients_map[read_fd].resp.getResponse();
+        resp_con.append(cgi_buff, byte_read);
+        _clients_map[read_fd].resp.setResponse(resp_con);
+        memset(cgi_buff, 0, sizeof(cgi_buff));
+    }
+    else if (byte_read < 0) {
+        std::cerr << "Fail to read cgi response\n";
+        removeSet(cgi.pipe_out[0], &_read_fd);
+        close(cgi.pipe_in[0]);
+        close(cgi.pipe_out[0]);
+        _clients_map[read_fd].resp.switchCgiStatus();
+        _clients_map[read_fd].resp.setError(500);
+    }
+    else {
+        removeSet(cgi.pipe_out[0], &_read_fd);
+        close(cgi.pipe_in[0]);
+        close(cgi.pipe_out[0]);
+
+        /*wait until cgi's child process is done*/
+        int cgi_status;
+        waitpid(cgi.getCgiPid(), &cgi_status, 0);
+        if (WEXITSTATUS(cgi_status) != 0)
+            _clients_map[read_fd].resp.setError(502);
+        _clients_map[read_fd].resp.switchCgiStatus();
+
+        std::string resp_con = _clients_map[read_fd].resp.getResponse();
+        if (resp_con.find("HTTP/1.1") == std::string::npos)
+            resp_con.insert(0, "HTTP/1.1 200 OK \r\n");
+        _clients_map[read_fd].resp.setResponse(resp_con);
     }
 }
 

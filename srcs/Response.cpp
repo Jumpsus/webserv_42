@@ -8,6 +8,7 @@ Response::Response()
     this->_auto_index = false;
     this->_body = "";
     this->_target_file = "";
+    this->_cgi_status = false;
 }
 
 Response::~Response()
@@ -30,6 +31,7 @@ Response::Response(Response const &response)
         this->_body = response._body;
         this->_target_file = response._target_file;
         this->_error_map = response._error_map;
+        this->_cgi_status = response._cgi_status;
     }
 
     return ;
@@ -49,9 +51,20 @@ Response &Response::operator=(Response const &response)
         this->_body = response._body;
         this->_target_file = response._target_file;
         this->_error_map = response._error_map;
+        this->_cgi_status = response._cgi_status;
     }
 
     return (*this);
+}
+
+std::string Response::getResponse()
+{
+    return (this->_response_content);   
+}
+
+void        Response::setResponse(const std::string& new_resp)
+{
+    this->_response_content = new_resp;
 }
 
 void        Response::setRequest(Request req)
@@ -66,6 +79,24 @@ void        Response::setServer(Server serv)
     this->_server = serv;
     this->_error_map = serv.getErrorPage();
     return ;
+}
+
+void        Response::setError(int error_code)
+{
+    this->_error = error_code;
+}
+
+bool        Response::getCgiStatus()
+{
+    return this->_cgi_status;
+}
+
+void        Response::switchCgiStatus()
+{
+    if (this->_cgi_status == true)
+        this->_cgi_status = false;
+    if (this->_cgi_status == false)
+        this->_cgi_status = true;
 }
 
 void        Response::buildResponse()
@@ -160,11 +191,17 @@ int         Response::buildBody()
             std::string file_extension = "." + getExtension(_request.getPath());
             std::vector<std::string> cgi_ext = loc.getCgiExt();
 
+            std::cout << "file_extension = " << file_extension << std::endl;
             for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
             {
                 if (file_extension == (*it))
                 {
                     // TODO: handle cgi
+                    cgi.setEnv(this->_request, loc);
+                    cgi.setArgs0(*it, loc);
+                    cgi.setCgiPath(_request.getPath());
+                    cgi.execCgi(_request);
+                    this->_cgi_status = true;
                 }
             }
         }
@@ -211,10 +248,6 @@ void        Response::setDefaultErrorFile(int error)
     _target_file = file_name;
 }
 
-std::string Response::getResponse()
-{
-    return (this->_response_content);   
-}
 
 void        Response::appendFirstLine()
 {

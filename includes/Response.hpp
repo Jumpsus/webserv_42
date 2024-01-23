@@ -7,6 +7,7 @@
 # include "Request.hpp"
 # include "config/Server.hpp"
 # include "config/Location.hpp"
+# include "Cgi.hpp"
 
 /*
    +------+-------------------------------+--------------------------+
@@ -67,13 +68,20 @@ class Response {
         ~Response();
         Response &operator=(Response const &res);
 
+        /*setter & getter*/
         std::string     getResponse();
+        bool            getCgiStatus();
         void            setRequest(Request req);
         void            setServer(Server serv);
+        void            setError(int error_code);
+        void            setResponse(const std::string& new_resp);
+        void            switchCgiStatus();
 
         void            buildResponse();
         void            printResponse();
         void            clear();
+        CgiHandler      cgi;
+        
     private:
         Request                             _request;
         Server                              _server;
@@ -86,6 +94,7 @@ class Response {
         std::string                         _body;
         std::string                         _target_file;
         std::map<int, std::string>          _error_map;
+        bool                                _cgi_status;
 
         void                                createHeaders();
 

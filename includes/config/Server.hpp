@@ -30,7 +30,6 @@ class Server {
         size_t                      getClientMaxBodySize() const;
         std::vector<Location>       getLocations() const;
         std::string                 getRoot() const;
-        std::string                 getStrHost() const;
 
         void                        setServer();
         void                        printServerInfo();
@@ -39,7 +38,6 @@ class Server {
     private:
         int                             _fd;
         unsigned long                   _host;
-        std::string                     _str_host;
         int                             _port;
         std::string                     _server_name;
         std::map<int, std::string>      _error_page;
