@@ -6,7 +6,7 @@
 # include "Request.hpp"
 # include "config/Config.hpp"
 # include "Webserv.hpp"
-# include "Response.hpp"
+
 # define env_iter std::map<std::string, std::string>::const_iterator
 
 /* refer to rfc3875 */
