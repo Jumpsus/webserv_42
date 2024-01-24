@@ -175,7 +175,11 @@ int         Response::buildBody()
                 if (loc.getAutoIndex())
                 {
                     // TODO: handle auto index
-                    // _body = "";
+                    _body = buildHtmlIndex(_target_file);
+                    if (_body == "") {
+                        _error = 500;
+                        return (1);
+                    }
                     return (0);
                 } else {
                     _error = 403;
