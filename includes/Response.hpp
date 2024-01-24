@@ -4,6 +4,8 @@
 # include <string>
 # include <map>
 # include <vector>
+# include <dirent.h>
+# include <ctime>
 # include "Request.hpp"
 # include "config/Server.hpp"
 # include "config/Location.hpp"
@@ -79,6 +81,7 @@ class Response {
 
         void            buildResponse();
         void            printResponse();
+        std::string     buildHtmlIndex(const std::string& tar_dir);
         void            clear();
         CgiHandler      cgi;
         

@@ -222,6 +222,64 @@ int         Response::buildBody()
     return (0);
 }
 
+std::string Response::buildHtmlIndex(const std::string& tar_dir)
+{
+    std::string html;
+    DIR *dir;
+    struct dirent *ent;
+
+    if ((dir = opendir(tar_dir.c_str())) != NULL)
+    {
+        /*make css format header*/
+        html.append("<!DOCTYPE html>\n<html>\n\t<head>\n");
+        html.append("\t\t<title> index of " + tar_dir + "<title>\n");
+        html.append("\t\t<style>\n\t\t\ttable, th, td{\n\t\t\t\tborder-collapse: collapse;\n\t\t\t}\n");
+        html.append("\t\t\tth, td{\n\t\t\t\tpadding: 5px;\n\t\t\t}\n");
+        html.append("\t\t\tth {\n\t\t\t\ttext-align: left;\n\t\t}\n");
+        html.append("\t\t</style>\n\t</head>\n\n");
+
+        /*make bold header and table index*/
+        html.append("\t<body>\n\t<h1> Index of " + tar_dir + "</h1>\n");
+        html.append("\t\t<table style=\"width:100%; font-size: 15px\">\n");
+        html.append("\t\t\t<tr>\n\t\t\t\t<th style=\"width:60%\">File Name</th>\n");
+        html.append("\t\t\t\t<th style=\"width:300\">Last Modification</th>\n");
+        html.append("\t\t\t\t<th style=\"width:100\">File Size</th>\n");
+        html.append("\t\t\t</tr>\n");
+
+        /*get all file within the directory*/
+        while ((ent = readdir(dir)) != NULL)
+        {
+            struct stat file_stat;
+            std::string file_name = ent->d_name;
+            stat(file_name.c_str(), &file_stat);
+
+            //append file name
+            html.append("\t\t\t<tr>\n\t\t\t\t<td>" + file_name);
+            if (S_ISDIR(file_stat.st_mode))
+                html.append("/");
+            html.append("</td>\n");
+
+            //append file last modified time
+            html.append("\t\t\t\t<td>");
+            html.append(ctime(&file_stat.st_mtime));
+            html.append("</td>\n");
+
+            //append file size
+            html.append("\t\t\t\t<td>");
+            if (S_ISDIR(file_stat.st_mode))
+                html.append("-");
+            else
+                html.append(ft_to_string(file_stat.st_size));
+            html.append("</td>\n\t\t\t</tr>");
+        }
+        closedir(dir);
+        html.append("\t\t<table>\n\t</body>\n</html>\n");
+        return html;
+    }
+    else
+        return "";
+}
+
 void        Response::buildErrorBody()
 {
     _body = "";
