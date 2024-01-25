@@ -8,6 +8,7 @@ Response::Response()
     this->_auto_index = false;
     this->_body = "";
     this->_target_file = "";
+    this->_cgi_status = false;
 }
 
 Response::~Response()
@@ -30,6 +31,7 @@ Response::Response(Response const &response)
         this->_body = response._body;
         this->_target_file = response._target_file;
         this->_error_map = response._error_map;
+        this->_cgi_status = response._cgi_status;
     }
 
     return ;
@@ -49,9 +51,20 @@ Response &Response::operator=(Response const &response)
         this->_body = response._body;
         this->_target_file = response._target_file;
         this->_error_map = response._error_map;
+        this->_cgi_status = response._cgi_status;
     }
 
     return (*this);
+}
+
+std::string Response::getResponse()
+{
+    return (this->_response_content);   
+}
+
+void        Response::setResponse(const std::string& new_resp)
+{
+    this->_response_content = new_resp;
 }
 
 void        Response::setRequest(Request req)
@@ -66,6 +79,24 @@ void        Response::setServer(Server serv)
     this->_server = serv;
     this->_error_map = serv.getErrorPage();
     return ;
+}
+
+void        Response::setError(int error_code)
+{
+    this->_error = error_code;
+}
+
+bool        Response::getCgiStatus()
+{
+    return this->_cgi_status;
+}
+
+void        Response::switchCgiStatus()
+{
+    if (this->_cgi_status == true)
+        this->_cgi_status = false;
+    if (this->_cgi_status == false)
+        this->_cgi_status = true;
 }
 
 void        Response::buildResponse()
@@ -144,7 +175,11 @@ int         Response::buildBody()
                 if (loc.getAutoIndex())
                 {
                     // TODO: handle auto index
-                    // _body = "";
+                    _body = buildHtmlIndex(_target_file);
+                    if (_body == "") {
+                        _error = 500;
+                        return (1);
+                    }
                     return (0);
                 } else {
                     _error = 403;
@@ -160,11 +195,17 @@ int         Response::buildBody()
             std::string file_extension = "." + getExtension(_request.getPath());
             std::vector<std::string> cgi_ext = loc.getCgiExt();
 
+            std::cout << "file_extension = " << file_extension << std::endl;
             for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
             {
                 if (file_extension == (*it))
                 {
                     // TODO: handle cgi
+                    cgi.setEnv(this->_request, loc);
+                    cgi.setArgs0(*it, loc);
+                    cgi.setCgiPath(_request.getPath());
+                    cgi.execCgi(_request);
+                    this->_cgi_status = true;
                 }
             }
         }
@@ -183,6 +224,64 @@ int         Response::buildBody()
     }
 
     return (0);
+}
+
+std::string Response::buildHtmlIndex(const std::string& tar_dir)
+{
+    std::string html;
+    DIR *dir;
+    struct dirent *ent;
+
+    if ((dir = opendir(tar_dir.c_str())) != NULL)
+    {
+        /*make css format header*/
+        html.append("<!DOCTYPE html>\n<html>\n\t<head>\n");
+        html.append("\t\t<title> index of " + tar_dir + "<title>\n");
+        html.append("\t\t<style>\n\t\t\ttable, th, td{\n\t\t\t\tborder-collapse: collapse;\n\t\t\t}\n");
+        html.append("\t\t\tth, td{\n\t\t\t\tpadding: 5px;\n\t\t\t}\n");
+        html.append("\t\t\tth {\n\t\t\t\ttext-align: left;\n\t\t}\n");
+        html.append("\t\t</style>\n\t</head>\n\n");
+
+        /*make bold header and table index*/
+        html.append("\t<body>\n\t<h1> Index of " + tar_dir + "</h1>\n");
+        html.append("\t\t<table style=\"width:100%; font-size: 15px\">\n");
+        html.append("\t\t\t<tr>\n\t\t\t\t<th style=\"width:60%\">File Name</th>\n");
+        html.append("\t\t\t\t<th style=\"width:300\">Last Modification</th>\n");
+        html.append("\t\t\t\t<th style=\"width:100\">File Size</th>\n");
+        html.append("\t\t\t</tr>\n");
+
+        /*get all file within the directory*/
+        while ((ent = readdir(dir)) != NULL)
+        {
+            struct stat file_stat;
+            std::string file_name = ent->d_name;
+            stat(file_name.c_str(), &file_stat);
+
+            //append file name
+            html.append("\t\t\t<tr>\n\t\t\t\t<td>" + file_name);
+            if (S_ISDIR(file_stat.st_mode))
+                html.append("/");
+            html.append("</td>\n");
+
+            //append file last modified time
+            html.append("\t\t\t\t<td>");
+            html.append(ctime(&file_stat.st_mtime));
+            html.append("</td>\n");
+
+            //append file size
+            html.append("\t\t\t\t<td>");
+            if (S_ISDIR(file_stat.st_mode))
+                html.append("-");
+            else
+                html.append(ft_to_string(file_stat.st_size));
+            html.append("</td>\n\t\t\t</tr>");
+        }
+        closedir(dir);
+        html.append("\t\t<table>\n\t</body>\n</html>\n");
+        return html;
+    }
+    else
+        return "";
 }
 
 void        Response::buildErrorBody()
@@ -211,10 +310,6 @@ void        Response::setDefaultErrorFile(int error)
     _target_file = file_name;
 }
 
-std::string Response::getResponse()
-{
-    return (this->_response_content);   
-}
 
 void        Response::appendFirstLine()
 {

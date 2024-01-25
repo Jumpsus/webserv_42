@@ -1,11 +1,18 @@
 #include "Cgi.hpp"
 
-CgiHandler::CgiHandler() {}
+CgiHandler::CgiHandler() 
+{
+    this->_body = "";
+    this->_args0 = "";
+    this->_cgiPath = "";
+}
 
-CgiHandler::CgiHandler(Request& request, Location& loc_ptr, const std::string& str_host)
+CgiHandler::CgiHandler(Request& request, Location& loc_ptr)
 {
     this->_body = request.getBody();
-    this->_setEnv(request, loc_ptr, str_host);
+    this->setEnv(request, loc_ptr);
+    this->_args0 = "";
+    this->_cgiPath = "";
 }
 
 CgiHandler::CgiHandler(CgiHandler const &cgi)
@@ -14,6 +21,8 @@ CgiHandler::CgiHandler(CgiHandler const &cgi)
     {
         this->_env = cgi._env;
         this->_body = cgi._body;
+        this->_args0 = cgi._args0;
+        this->_cgiPath = cgi._cgiPath;
     }
 }
 
@@ -23,6 +32,8 @@ CgiHandler &CgiHandler::operator=(CgiHandler const &cgi)
     {
         this->_env = cgi._env;
         this->_body = cgi._body;
+        this->_args0 = cgi._args0;
+        this->_cgiPath = cgi._cgiPath;
     }
 
     return (*this);
@@ -34,7 +45,7 @@ CgiHandler::~CgiHandler()
     this->_body.clear();
 }
 
-void    CgiHandler::setCgiPath(const std::string& cgi_path)
+void                CgiHandler::setCgiPath(const std::string& cgi_path)
 {
     this->_cgiPath = cgi_path;
 }
@@ -44,7 +55,28 @@ const std::string&  CgiHandler::getCgiPath() const
     return this->_cgiPath;
 }
 
-std::string CgiHandler::_getScriptFilename(const std::string& cgi_path)
+pid_t               CgiHandler::getCgiPid()
+{
+    return this->_cgi_pid;
+}
+
+void                CgiHandler::setArgs0(const std::string& extension, const Location& loc_ptr)
+{
+    s_iter path_ptr;
+
+    if (extension == ".py") {
+        path_ptr = ft_find_by_keyword(loc_ptr.getCgiPath(), "python");
+        if (path_ptr != loc_ptr.getCgiPath().end())
+            this->_args0 = *path_ptr;
+    }
+    if (extension == ".sh") {
+        path_ptr = ft_find_by_keyword(loc_ptr.getCgiPath(), "bash");
+        if (path_ptr != loc_ptr.getCgiPath().end())
+            this->_args0 = *path_ptr;
+    }
+}
+
+std::string         CgiHandler::_getScriptFilename(const std::string& cgi_path)
 {
     int pos = cgi_path.find("cgi-bin/");
 
@@ -55,12 +87,22 @@ std::string CgiHandler::_getScriptFilename(const std::string& cgi_path)
     return cgi_path.substr(pos + 8, cgi_path.size());
 }
 
+std::string         CgiHandler::_getRemoteAddress(const std::string& http_host)
+{
+    std::string hostname = http_host.substr(0, http_host.length() - http_host.find(':'));
+    if (hostname.length() == 0)
+        return "";
+    if (hostname == "localhost")
+        return "127.0.0.1";
+    return hostname;
+}
+
 /*_env variables sources 
 1) https://linux.die.net/man/5/cgi
 2) https://docs.fileformat.com/th/executable/cgi/#google_vignette (thai)
 */
 
-void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string& host)
+void                CgiHandler::setEnv(Request& request, Location& loc_ptr)
 {
    /*get CGI path & extensions
     1) check if the path's extension is exist in the location setting
@@ -68,21 +110,9 @@ void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string&
     3) parse the folder to args[0]
     4) parse the path to args[1]
     */
-    std::string extension = this->_cgiPath.substr(this->_cgiPath.find("."));
-    std::string args_0;
-    if (ft_find_by_keyword(loc_ptr.getCgiExt(), extension) == loc_ptr.getCgiExt().end())
+    if (this->_args0 == "" || this->_cgiPath == "")
         return ;
-    if (extension == ".py" && ft_find_by_keyword(loc_ptr.getCgiPath(), "python") != loc_ptr.getCgiPath().end())
-        return ;
-    else
-        args_0 = *ft_find_by_keyword(loc_ptr.getCgiPath(), "python");
-    if (extension == ".sh" && ft_find_by_keyword(loc_ptr.getCgiPath(), "bash") != loc_ptr.getCgiPath().end())
-        return ;
-    else
-        args_0 = *ft_find_by_keyword(loc_ptr.getCgiPath(), "bash");
-
-    this->_args = (char**) malloc( sizeof(char*) * 3 );
-    this->_args[0] = strdup(args_0.c_str());
+    this->_args[0] = strdup(this->_args0.c_str());
     this->_args[1] = strdup(this->_cgiPath.c_str());
     this->_args[2] = NULL;
     
@@ -109,23 +139,21 @@ void CgiHandler::_setEnv(Request& request, Location& loc_ptr, const std::string&
     /*set basic CGI variable*/
     this->_env["SCRIPT_NAME"] = this->_cgiPath;
     this->_env["SCRIPT_FILENAME"] = _getScriptFilename(this->_cgiPath);
-    this->_env["REMOTE_ADDR"] = host;
+    this->_env["REMOTE_ADDR"] = _getRemoteAddress(headers["host"]);
     this->_env["SERVER_NAME"] = splitString(headers["host"], ":");
     this->_env["SERVER_PORT"] = headers["host"].substr(this->_env["SERVER_NAME"].length() + 1, headers["host"].length());
     this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_env["SERVER_SOFTWARE"] = "WEBSERV";
     headers.clear();
     this->_body = request.getBody();
-    char**  ret_args;
-    ret_args = (char**) malloc( sizeof(char*) * 3 );
 }
 
-void CgiHandler::setBody(const std::string& ebody)
+void                CgiHandler::setBody(const std::string& ebody)
 {
     this->_body = ebody;
 }
 
-char**  CgiHandler::_envToCstrArr() const
+char**              CgiHandler::_envToCstrArr() const
 {
     char    **c_env = new char*[this->_env.size() + 1];
     int     j = 0;
@@ -141,9 +169,8 @@ char**  CgiHandler::_envToCstrArr() const
     return c_env;
 }
 
-void    CgiHandler::execCgi(Request &req, const Location& loc_ptr)
+void                CgiHandler::execCgi(Request &req)
 {
-    pid_t   cgi_pid;
     char    **cgi_env = _envToCstrArr();
 
     //can't set _args
@@ -173,15 +200,15 @@ void    CgiHandler::execCgi(Request &req, const Location& loc_ptr)
         return ;
     }
     //start fork process
-    cgi_pid = fork();
-    if (cgi_pid < 0) {
+    _cgi_pid = fork();
+    if (_cgi_pid < 0) {
         std::cerr << "Fail to fork\n";
         
         req.setError(500);
         return ;
     }
     //successful fork
-    if (cgi_pid == 0) {
+    if (_cgi_pid == 0) {
         dup2(pipe_in[0], STDIN_FILENO);
         dup2(pipe_out[1], STDOUT_FILENO);
         close(pipe_in[0]);
@@ -197,7 +224,7 @@ void    CgiHandler::execCgi(Request &req, const Location& loc_ptr)
 }
 
 /*This function check if PATH_INFO exist it request path, by finding the occurance of cgi extentions*/
-std::string CgiHandler::_getPathInfo(const std::string& req_path, const std::vector<std::string>& exts)
+std::string             CgiHandler::_getPathInfo(const std::string& req_path, const std::vector<std::string>& exts)
 {
     std::string temp_str;
     size_t  begin, end;
@@ -224,7 +251,7 @@ std::string CgiHandler::_getPathInfo(const std::string& req_path, const std::vec
 
 /*This function change the "encoded" reserve characters back to the reserve characters
 https://en.wikipedia.org/wiki/Percent-encoding --> reserve character*/
-std::string CgiHandler::_decodeQuery(std::string req_query)
+std::string             CgiHandler::_decodeQuery(std::string req_query)
 {
     size_t  p_pos = req_query.find("%");
     while (p_pos != std::string::npos)
@@ -232,7 +259,7 @@ std::string CgiHandler::_decodeQuery(std::string req_query)
         if (req_query.length() < p_pos + 2)
             break ;
         char    r_char = ft_htoi(req_query.substr(p_pos + 1, 2));
-        req_query.replace(p_pos, 3, std::to_string(r_char));
+        req_query.replace(p_pos, 3, ft_to_string(r_char));
         p_pos = req_query.find("%");
     }
     return req_query;

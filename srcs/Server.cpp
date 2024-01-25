@@ -36,7 +36,6 @@ Server::Server(Server const &serv)
         _client_max_body_size = serv._client_max_body_size;
         _locations = serv._locations;
         _root = serv._root;
-        _str_host = serv._str_host;
     }
 }
 
@@ -131,7 +130,6 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
         if (value[0] == "localhost")
         {
             value[0] = "127.0.0.1";
-            this->_str_host = value[0];
         }
 
         if (!ft_is_valid_host(value[0]))
@@ -215,7 +213,6 @@ Server  &Server::operator=(Server const &serv)
         _client_max_body_size = serv._client_max_body_size;
         _locations = serv._locations;
         _root = serv._root;
-        _str_host = serv._host;
     }
     return (*this);
 }
@@ -281,11 +278,6 @@ std::vector<Location>       Server::getLocations() const
 std::string                 Server::getRoot() const
 {
     return this->_root;
-}
-
-std::string                 Server::getStrHost() const
-{
-    return this->_str_host;
 }
 
 void    Server::checkDupLocation(const Location& ori, const Location& check)

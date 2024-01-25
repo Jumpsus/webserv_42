@@ -41,8 +41,8 @@ class ServerManager {
         void                    removeSet(int fd, fd_set* set);
         void                    checkTimeout();
         void                    assignServer(Client &c);
-        //void                    writeCgi(int write_fd);
-        //void                    readCgi(int read_fd);
+        void                    writeCgi(int write_fd, CgiHandler& cgi);
+        void                    readCgi(int read_fd, CgiHandler& cgi);
 };
 
 #endif
