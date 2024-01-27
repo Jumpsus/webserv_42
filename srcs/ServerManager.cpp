@@ -78,9 +78,10 @@ void    ServerManager::startServers()
         memcpy(&current_read, &_read_fd, sizeof(_read_fd));
         memcpy(&current_write, &_write_fd, sizeof(_write_fd));
 
+        //std::cout << "max_fd before select = " << _max_fd << std::endl;
         int ready = select(_max_fd + 1, &current_read, &current_write, NULL, &timeout);
 
-        std::cout << "ready " << ready << std::endl;
+        //std::cout << "ready " << ready << std::endl;
         if (ready < 0)
         {
             std::cerr << "select failed: " << errno << std::endl;
@@ -95,9 +96,16 @@ void    ServerManager::startServers()
 
         for (int i = 0; (i <= _max_fd); ++i)
         {
+            //std::cout << "index = " << i << std::endl;
+            //std::cout << "max_fd = " << _max_fd << std::endl;
+            //if (_clients_map[i].resp.getCgiStatus() == true) {
+            //    std::cout << "pipe_in fd = " << _clients_map[i].resp.cgi.pipe_in[1] << std::endl;
+            //    std::cout << "pipe_out fd = " << _clients_map[i].resp.cgi.pipe_out[0] << std::endl;
+            //}
+            
             if (FD_ISSET(i, &_server_fd))
             {
-                std::cout << "accept "<< std::endl;
+                //std::cout << "accept "<< std::endl;
                 acceptConnection(i);
             } else if (FD_ISSET(i, &current_read)) {
                 receiveRequest(i);
@@ -159,7 +167,8 @@ void    ServerManager::acceptConnection(int server_fd)
     socklen_t           client_addr_len = sizeof(client_addr);
     int                 client_fd;
     Client              new_client(_servers_map[server_fd]);
-    std::cout << "start accept " << std::endl;
+
+    //std::cout << "start accept " << std::endl;
     if (!_servers_map.count(server_fd))
     {
         std::cerr << "could not found server map for fd : " << server_fd << std::endl;
@@ -191,7 +200,7 @@ void    ServerManager::acceptConnection(int server_fd)
 
     addSet(client_fd, &_read_fd);
 
-    std::cout << "got new fd: "<< client_fd << std::endl;
+    //std::cout << "got new fd: "<< client_fd << std::endl;
 }
 
 /* please mark read fd as non-bloacking before use recv() 
@@ -205,7 +214,7 @@ void    ServerManager::receiveRequest(int read_fd)
     int rc = recv(read_fd, buffer, sizeof(buffer), 0);
 
     if (rc < 0) {
-        std::cerr << "[Crash] error recv:" << errno << "end server now" << std::endl;
+        std::cerr << "[Crash] error recv: " << errno << " end server now" << std::endl;
         closeConnection(read_fd);
         return ;
     }
@@ -215,11 +224,15 @@ void    ServerManager::receiveRequest(int read_fd)
         _clients_map[read_fd].updateTime();
         if (_clients_map[read_fd].feed(req, rc))
         {
+            _clients_map[read_fd].buildResponse();
             removeSet(read_fd, &_read_fd);
             addSet(read_fd, &_write_fd);
-        //    std::cout << "Request Recived From Socket " << read_fd << " Method = " << 
-        //             _clients_map[read_fd].req.getMethod() << " URI = " << _clients_map[read_fd].req.getPath() << std::endl;
-            _clients_map[read_fd].buildResponse();
+            if (_clients_map[read_fd].resp.getCgiStatus() == true)
+            {
+                _clients_map[read_fd].fillReqBody();
+                addSet(_clients_map[read_fd].resp.cgi.pipe_in[1], &_write_fd);
+                addSet(_clients_map[read_fd].resp.cgi.pipe_out[0], &_read_fd);
+            }
         }
         memset(buffer, 0, sizeof(buffer));
         return ;
@@ -230,23 +243,27 @@ void    ServerManager::receiveRequest(int read_fd)
         std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
         closeConnection(read_fd);
     }
+    
+    
 }
 
 void    ServerManager::writeResponse(int write_fd)
 {
+    std::cout << "write response, write_fd = " << write_fd << std::endl;
     std::string resp = _clients_map[write_fd].getResponse();
 
-    std::cout << "Response = " << resp << std::endl;
+    //std::cout << "Response = " << resp << std::endl;
 
     /* After recv fd is set not ready for read until Client cancelled connection */
     int rc = send(write_fd, resp.c_str(), resp.length(), 0);
-
+    
     if (rc < 0) {
-        std::cerr << "[Crash] error send:" << errno << "end server now" << std::endl;
+        std::cerr << "[Crash] error send: " << errno << " end server now" << std::endl;
+        //std::cout << "[Crash] error send: " << errno << " end server now" << std::endl;
         closeConnection(write_fd);
         return ;
     }
-
+    
     if (_clients_map[write_fd].req.keepAlive())
     {
         _clients_map[write_fd].clearContent();
@@ -259,7 +276,11 @@ void    ServerManager::writeResponse(int write_fd)
 
 void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
 {
+    std::cout << "write cgi, write_fd = " << write_fd << std::endl;
+    //std::cout << "cgi.pipe_in[1] = " << cgi.pipe_in[1] << std::endl;
     std::string body = _clients_map[write_fd].req.getBody();
+
+    //std::cout << "write body = " << body << " length = " << body.length() << std::endl;
     int         body_sent = body.length();
     if (body_sent >= MESSAGE_BUFFER)
         body_sent = write(cgi.pipe_in[1], body.c_str(), MESSAGE_BUFFER);
@@ -267,13 +288,14 @@ void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
         body_sent = write(cgi.pipe_in[1], body.c_str(), body.length());
     
     if (body_sent < 0) {
-        std::cerr << "Fail to send body to cgi\n";
+        //std::cerr << "Fail to send body to cgi\n";
         removeSet(cgi.pipe_in[1], &_write_fd);
         close(cgi.pipe_in[1]);
         close(cgi.pipe_out[1]);
         _clients_map[write_fd].resp.setError(500);
     }
     else if (body_sent == 0) {
+        //std::cout << "Can't write, so remove\n";
         removeSet(cgi.pipe_in[1], &_write_fd);
         close(cgi.pipe_in[1]);
         close(cgi.pipe_out[1]);
@@ -282,21 +304,24 @@ void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
         _clients_map[write_fd].updateTime();
         body = body.substr(body_sent);
     }
-
 }
 
 void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
 {
-    char    cgi_buff[MESSAGE_BUFFER * 3];
-    int     byte_read = read(cgi.pipe_out[0], cgi_buff, MESSAGE_BUFFER * 3);
+    std::cout << "read cgi, read_fd = " << read_fd << std::endl;
+    //std::cout << "cgi.pipe_out[0] = " << cgi.pipe_out[0] << std::endl;
 
+    char    pipe_out_0[MESSAGE_BUFFER * 2];
+    int     byte_read = read(cgi.pipe_out[0], pipe_out_0, MESSAGE_BUFFER * 2);
+
+    std::cout << "pipe_out_0 = " << pipe_out_0 << std::endl;
     if (byte_read > 0) {
         _clients_map[read_fd].updateTime();
 
         std::string resp_con = _clients_map[read_fd].resp.getResponse();
-        resp_con.append(cgi_buff, byte_read);
+        resp_con.append(pipe_out_0, byte_read);
         _clients_map[read_fd].resp.setResponse(resp_con);
-        memset(cgi_buff, 0, sizeof(cgi_buff));
+        memset(pipe_out_0, 0, sizeof(pipe_out_0));
     }
     else if (byte_read < 0) {
         std::cerr << "Fail to read cgi response\n";
@@ -321,6 +346,7 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
         std::string resp_con = _clients_map[read_fd].resp.getResponse();
         if (resp_con.find("HTTP/1.1") == std::string::npos)
             resp_con.insert(0, "HTTP/1.1 200 OK \r\n");
+        std::cout << "resp_con = " << resp_con << std::endl;
         _clients_map[read_fd].resp.setResponse(resp_con);
     }
 }
@@ -336,14 +362,16 @@ void    ServerManager::addSet(int fd, fd_set* set)
 
 void    ServerManager::removeSet(int fd, fd_set* set)
 {
+    //std::cout << "remove fd = " << fd << std::endl;
     FD_CLR(fd, set);
 
     int temp_max = 0;
 
     if (fd == _max_fd)
     {
-       for (int i = 0; i < _max_fd; i++)
-       {
+        _max_fd--;
+        /*for (int i = 0; i < _max_fd; i++)
+        {
             if (FD_ISSET(i, &_write_fd))
             {
                 temp_max = i;
@@ -353,14 +381,14 @@ void    ServerManager::removeSet(int fd, fd_set* set)
             {
                 temp_max = i;
             }
-       }
+        }
+        _max_fd = temp_max;*/
     }
-
-    _max_fd = temp_max;
 }
 
 void    ServerManager::closeConnection(int fd)
 {
+    //std::cout << "close connection fd = " << fd << std::endl;
     if (FD_ISSET(fd, &_server_fd))
     {
         removeSet(fd, &_server_fd);

@@ -310,6 +310,11 @@ const std::string& Request::getBody() const
     return (this->_body);
 }
 
+void    Request::setBody(const std::string& newbody)
+{
+    this->_body = newbody;
+}
+
 void    Request::setPath(std::string uri)
 {
     std::size_t     found;

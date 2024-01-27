@@ -43,6 +43,6 @@ bool                                ft_is_white_space(char c);
 std::string                         ft_trimspace(std::string input);
 bool                                ft_isURI(const std::string& word);
 std::string                         ft_join(std::string path1, std::string path2);
-s_iter                              ft_find_by_keyword(std::vector<std::string> vec, const std::string& needle);
+std::string                         ft_find_by_keyword(std::vector<std::string> vec, const std::string& needle);
 
 #endif

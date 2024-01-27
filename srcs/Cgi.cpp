@@ -2,17 +2,19 @@
 
 CgiHandler::CgiHandler() 
 {
-    this->_body = "";
     this->_args0 = "";
     this->_cgiPath = "";
+    this->_args = NULL;
+    this->_cgi_env = NULL;
 }
 
 CgiHandler::CgiHandler(Request& request, Location& loc_ptr)
 {
-    this->_body = request.getBody();
     this->setEnv(request, loc_ptr);
     this->_args0 = "";
     this->_cgiPath = "";
+    this->_args = NULL;
+    this->_cgi_env = NULL;
 }
 
 CgiHandler::CgiHandler(CgiHandler const &cgi)
@@ -20,9 +22,10 @@ CgiHandler::CgiHandler(CgiHandler const &cgi)
     if (this != &cgi)
     {
         this->_env = cgi._env;
-        this->_body = cgi._body;
         this->_args0 = cgi._args0;
         this->_cgiPath = cgi._cgiPath;
+        this->_cgi_env = cgi._cgi_env;
+        this->_args = cgi._args;
     }
 }
 
@@ -31,9 +34,10 @@ CgiHandler &CgiHandler::operator=(CgiHandler const &cgi)
     if (this != &cgi)
     {
         this->_env = cgi._env;
-        this->_body = cgi._body;
         this->_args0 = cgi._args0;
         this->_cgiPath = cgi._cgiPath;
+        this->_cgi_env = cgi._cgi_env;
+        this->_args = cgi._args;
     }
 
     return (*this);
@@ -41,8 +45,19 @@ CgiHandler &CgiHandler::operator=(CgiHandler const &cgi)
 
 CgiHandler::~CgiHandler()
 {
+    if (this->_args)
+    {
+        for (int i = 0; this->_args[i]; i++)
+            free(_args[i]);
+        free(_args);
+    }
+    if (this->_cgi_env)
+    {
+        for (int j = 0; this->_cgi_env[j]; j++)
+            free(_cgi_env[j]);
+        free(_cgi_env);
+    }
     this->_env.clear();
-    this->_body.clear();
 }
 
 void                CgiHandler::setCgiPath(const std::string& cgi_path)
@@ -62,17 +77,17 @@ pid_t               CgiHandler::getCgiPid()
 
 void                CgiHandler::setArgs0(const std::string& extension, const Location& loc_ptr)
 {
-    s_iter path_ptr;
+    std::string path_str;
 
     if (extension == ".py") {
-        path_ptr = ft_find_by_keyword(loc_ptr.getCgiPath(), "python");
-        if (path_ptr != loc_ptr.getCgiPath().end())
-            this->_args0 = *path_ptr;
+        path_str = ft_find_by_keyword(loc_ptr.getCgiPath(), "python");
+        if (path_str != "")
+            this->_args0 = path_str;
     }
     if (extension == ".sh") {
-        path_ptr = ft_find_by_keyword(loc_ptr.getCgiPath(), "bash");
-        if (path_ptr != loc_ptr.getCgiPath().end())
-            this->_args0 = *path_ptr;
+        path_str = ft_find_by_keyword(loc_ptr.getCgiPath(), "bash");
+        if (path_str != "")
+            this->_args0 = path_str;
     }
 }
 
@@ -89,7 +104,7 @@ std::string         CgiHandler::_getScriptFilename(const std::string& cgi_path)
 
 std::string         CgiHandler::_getRemoteAddress(const std::string& http_host)
 {
-    std::string hostname = http_host.substr(0, http_host.length() - http_host.find(':'));
+    std::string hostname = http_host.substr(0, http_host.find(':'));
     if (hostname.length() == 0)
         return "";
     if (hostname == "localhost")
@@ -110,12 +125,14 @@ void                CgiHandler::setEnv(Request& request, Location& loc_ptr)
     3) parse the folder to args[0]
     4) parse the path to args[1]
     */
+
     if (this->_args0 == "" || this->_cgiPath == "")
         return ;
+    this->_args = (char**)malloc(sizeof(char*) * 3);
     this->_args[0] = strdup(this->_args0.c_str());
     this->_args[1] = strdup(this->_cgiPath.c_str());
     this->_args[2] = NULL;
-    
+
     /*set env variables per reqeust file*/
     std::map<std::string, std::string> headers = request.getHeader();
     if (headers.find("Auth-Scheme") != headers.end() && headers["Auth-Scheme"] != "")
@@ -137,58 +154,56 @@ void                CgiHandler::setEnv(Request& request, Location& loc_ptr)
     this->_env["QUERY_STRING"] = _decodeQuery(request.getQuery());
 
     /*set basic CGI variable*/
+    this->_env["REQUEST_METHOD"] = request.getMethod();
+    this->_env["REQUEST_URI"] = request.getPath() + request.getQuery();
+    this->_env["REDIRECT_STATUS"] = "200";
     this->_env["SCRIPT_NAME"] = this->_cgiPath;
     this->_env["SCRIPT_FILENAME"] = _getScriptFilename(this->_cgiPath);
     this->_env["REMOTE_ADDR"] = _getRemoteAddress(headers["host"]);
     this->_env["SERVER_NAME"] = splitString(headers["host"], ":");
-    this->_env["SERVER_PORT"] = headers["host"].substr(this->_env["SERVER_NAME"].length() + 1, headers["host"].length());
+    //std::cout << "set server port " << headers["host"] << std::endl;
+    this->_env["SERVER_PORT"] = headers["host"];
     this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_env["SERVER_SOFTWARE"] = "WEBSERV";
     headers.clear();
-    this->_body = request.getBody();
-}
-
-void                CgiHandler::setBody(const std::string& ebody)
-{
-    this->_body = ebody;
 }
 
 char**              CgiHandler::_envToCstrArr() const
 {
-    char    **c_env = new char*[this->_env.size() + 1];
+    char    **c_env;
     int     j = 0;
 
+    c_env = (char**)malloc(sizeof(char*) * (this->_env.size() + 1));
     c_env[this->_env.size()] == NULL;
     for (env_iter it = this->_env.begin() ; it != this->_env.end() ; it++)
     {
         std::string     elem = it->first + "=" + it->second;
-        c_env[j] = new char[elem.size() + 1];
-        c_env[j] = strcpy(c_env[j], (const char *)elem.c_str());
+        c_env[j] = strdup(elem.c_str());
         j++;
     }
     return c_env;
 }
 
-void                CgiHandler::execCgi(Request &req)
+void                CgiHandler::execCgi(int &error, int &status)
 {
-    char    **cgi_env = _envToCstrArr();
-
     //can't set _args
-    if (this->_args[0] == NULL || this->_args[1] == NULL) {
+    if (!this->_args || this->_args[0] == NULL || this->_args[1] == NULL) {
         std::cerr << "Can't initiate args\n";
-        req.setError(500);
+        error = (500);
         return ;
     }
+
+    this->_cgi_env = _envToCstrArr(); //it currently don't working
     //can't set cgi_env
-    if (cgi_env[0] == NULL || cgi_env[1] == NULL) {
+    if (_cgi_env[0] == NULL || _cgi_env[1] == NULL) {
         std::cerr << "Fail to create cgi env\n";
-        req.setError(500);
+        error = 500;
         return ;
     }
     //can't pipe pipe_in
     if (pipe(pipe_in) < 0) {
         std::cerr << "Fail to create pipe_in\n";
-        req.setError(500);
+        error = 500;
         return ;
     }
     //can't pipe pipe_out
@@ -196,30 +211,32 @@ void                CgiHandler::execCgi(Request &req)
         std::cerr << "Fail to create pipe_out\n";
         close(pipe_in[0]);
         close(pipe_in[1]);
-        req.setError(500);
+        error = 500;
         return ;
     }
     //start fork process
     _cgi_pid = fork();
     if (_cgi_pid < 0) {
         std::cerr << "Fail to fork\n";
-        
-        req.setError(500);
-        return ;
+        error = 500;
     }
     //successful fork
-    if (_cgi_pid == 0) {
+    else if (_cgi_pid == 0) {
+        extern char**       environ;
+        //for (int i = 0; _args[i]; i++)
+        //    std::cout << _args[i] << std::endl;
+        //std::cout << std::endl;
+        //for (int j = 0; _cgi_env[j]; j++)
+        //    std::cout << _cgi_env[j] << std::endl;
+        //std::cout << std::endl;
         dup2(pipe_in[0], STDIN_FILENO);
         dup2(pipe_out[1], STDOUT_FILENO);
         close(pipe_in[0]);
         close(pipe_in[1]);
         close(pipe_out[0]);
         close(pipe_out[1]);
-        if (execve(_args[0], _args, cgi_env)) {
-            std::cerr << "Fail to exec cgi script\n";
-            req.setError(500);
-            return ;
-        }
+        execve(_args[0], _args, environ);
+        exit(0);
     }
 }
 
@@ -232,7 +249,8 @@ std::string             CgiHandler::_getPathInfo(const std::string& req_path, co
     /*find if request "_path" contain "_cgi_ext"*/
     for (std::vector<std::string>::const_iterator ext_ptr = exts.begin(); ext_ptr != exts.end(); ext_ptr++)
     {
-        if (begin = req_path.find(*ext_ptr) != std::string::npos)
+        begin = req_path.find(*ext_ptr);
+        if (begin != std::string::npos)
         {
             if (begin + 3 >= req_path.size())
                 return "";
@@ -263,4 +281,11 @@ std::string             CgiHandler::_decodeQuery(std::string req_query)
         p_pos = req_query.find("%");
     }
     return req_query;
+}
+
+void                    CgiHandler::clear()
+{
+    this->_env.clear();
+    this->_args0.clear();
+    this->_cgiPath.clear();
 }

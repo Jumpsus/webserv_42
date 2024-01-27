@@ -51,6 +51,7 @@ class Request {
         void                                setVersion(std::string version);
         void                                setError(int error);
         void                                setMaxBodySize(size_t max);
+        void                                setBody(const std::string& newbody);
 
         void                                printRequest();
         void                                clear();

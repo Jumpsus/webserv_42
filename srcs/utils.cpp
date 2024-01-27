@@ -615,13 +615,13 @@ std::string defaultErrorPage(int error)
     return (errorPage);
 }
 
-s_iter ft_find_by_keyword(std::vector<std::string> vec, const std::string& needle)
+std::string ft_find_by_keyword(std::vector<std::string> vec, const std::string& needle)
 {
     for (s_iter it = vec.begin(); it != vec.end(); it++)
     {
         std::string iter_buff = *it;
-        if (iter_buff.find("needle") != std::string::npos)
-            return it;
+        if (iter_buff.find(needle) != std::string::npos)
+            return iter_buff;
     }
-    return vec.end();
+    return "";
 }
