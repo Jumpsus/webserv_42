@@ -174,7 +174,7 @@ char**              CgiHandler::_envToCstrArr() const
     int     j = 0;
 
     c_env = (char**)malloc(sizeof(char*) * (this->_env.size() + 1));
-    c_env[this->_env.size()] == NULL;
+    c_env[this->_env.size()] = NULL;
     for (env_iter it = this->_env.begin() ; it != this->_env.end() ; it++)
     {
         std::string     elem = it->first + "=" + it->second;
