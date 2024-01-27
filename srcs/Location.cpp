@@ -65,9 +65,6 @@ void    Location::initAllowMethods(bool input)
     _allow_methods["PUT"] = input;
     _allow_methods["DELETE"] = input;
     _allow_methods["HEAD"] = input;
-    _allow_methods["CONNECT"] = input;
-    _allow_methods["OPTIONS"] = input;
-    _allow_methods["TRACE"] = input;
 }
 
 const std::string& Location::getPath() const

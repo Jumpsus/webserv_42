@@ -252,14 +252,6 @@ int         Response::buildBody()
                 }
             }
         }
-
-        // if (!readFile(_target_file, _body))
-        // {
-        //     _error = 404;
-        //     return (1);
-        // }
-
-        // _status = 200;
     }
 
     // handle request type
@@ -274,23 +266,38 @@ int         Response::buildBody()
             return (1);
         }
     } else if (method == "POST" || method == "PUT") {
+        /* https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.3 */
         if (isFileExists(_target_file) && method == "POST")
         {
             _status = 204;
             return (0);
         }
-        // if (!readFile(_target_file, _body))
-        // {
-        //     _error = 404;
-        //     return (1);
-        // }
+
+        std::ofstream file(_target_file, std::ios::binary);
+        if (file.fail())
+        {
+            _error = 404;
+            return (1);
+        }
+
+        file << _request.getBody();
+        file.close();
 
     } else if (method == "DELETE") {
         // remove file 
+        if (!isFileExists(_target_file))
+        {
+            _error = 404;
+            return (1);
+        }
+        if (remove(_target_file.c_str()) != 0)
+        {
+            _error = 500;
+            return (1);
+        }
     }
 
     _status = 200;
-
     return (0);
 }
 
