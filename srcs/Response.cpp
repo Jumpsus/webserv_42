@@ -171,7 +171,20 @@ int         Response::buildBody()
                 return (1);
             }
 
-            if (!isFileExists(_target_file + loc.getIndex()))
+            std::vector<std::string> indexs = loc.getIndex();
+            bool                     file_exist = false;
+
+            for (std::vector<std::string>::iterator it = indexs.begin(); it != indexs.end(); it++)
+            {
+                if (isFileExists(_target_file + *it))
+                {
+                    _target_file = _target_file + *it;
+                    file_exist = true;
+                    break;
+                }
+            }
+
+            if (!file_exist)
             {
                 if (loc.getAutoIndex())
                 {
@@ -187,8 +200,6 @@ int         Response::buildBody()
                     return (1);
                 }
             }
-
-            _target_file = _target_file + loc.getIndex();
         }
 
         if (loc.getCgiExt().size() != 0)
@@ -202,14 +213,83 @@ int         Response::buildBody()
         _target_file = ft_join(_server.getRoot(), _request.getPath());
         //std::cout << "_target_file = " << _target_file << std::endl;
 
+        if (isDirectory(_target_file))
+        {
+            if (_target_file[_target_file.length() - 1] != '/')
+            {
+                _status = 301;
+                _location = _request.getPath() + "/";
+                return (1);
+            }
+
+            std::vector<std::string> indexs = _server.getIndex();
+            bool                     file_exist = false;
+
+            for (std::vector<std::string>::iterator it = indexs.begin(); it != indexs.end(); it++)
+            {
+                if (isFileExists(_target_file + *it))
+                {
+                    _target_file = _target_file + *it;
+                    file_exist = true;
+                    break;
+                }
+            }
+
+            if (!file_exist)
+            {
+                if (_server.getAutoIndex())
+                {
+                    // TODO: handle auto index
+                    _body = buildHtmlIndex(_target_file);
+                    if (_body == "") {
+                        _error = 500;
+                        return (1);
+                    }
+                    return (0);
+                } else {
+                    _error = 403;
+                    return (1);
+                }
+            }
+        }
+
+        // if (!readFile(_target_file, _body))
+        // {
+        //     _error = 404;
+        //     return (1);
+        // }
+
+        // _status = 200;
+    }
+
+    // handle request type
+
+    std::string method = ft_toupper(_request.getMethod());
+
+    if (method == "GET" || method == "HEAD")
+    {
         if (!readFile(_target_file, _body))
         {
             _error = 404;
             return (1);
         }
+    } else if (method == "POST" || method == "PUT") {
+        if (isFileExists(_target_file) && method == "POST")
+        {
+            _status = 204;
+            return (0);
+        }
+        // if (!readFile(_target_file, _body))
+        // {
+        //     _error = 404;
+        //     return (1);
+        // }
 
-        _status = 200;
+    } else if (method == "DELETE") {
+        // remove file 
     }
+
+    _status = 200;
 
     return (0);
 }
