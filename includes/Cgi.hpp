@@ -27,12 +27,13 @@ class CgiHandler {
         pid_t                               getCgiPid();
         void                                setArgs0(const std::string& extension, const Location& loc_ptr);
         void                                setEnv(Request& request, Location& loc_ptr);
+        void                                clear();
 
         /*checker*/
         void                                printEnv();
 
         /*system call*/
-        void                                execCgi(Request &req);
+        void                                execCgi(int &error, int &status);
         
         /*input and output pipe*/
         int                                 pipe_in[2]; //to get input body throw by response
@@ -40,11 +41,11 @@ class CgiHandler {
 
     private:
         std::map<std::string, std::string>  _env;
-        std::string                         _body;
         std::string                         _args0;
         std::string                         _cgiPath;
         char**                              _args;
         pid_t                               _cgi_pid;
+        char**                              _cgi_env;
 
         std::string                         _getPathInfo(const std::string& req_path, const std::vector<std::string>& exts);
         std::string                         _decodeQuery(std::string req_query);

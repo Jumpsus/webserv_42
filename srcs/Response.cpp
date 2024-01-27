@@ -101,12 +101,12 @@ void        Response::switchCgiStatus()
 
 void        Response::buildResponse()
 {
+    std::cout << "build response\n";
     if (this->_error || buildBody())
     {
         _status = _error;
         buildErrorBody();
     }
-
     appendFirstLine();
     appendHeaders();
     appendBody();
@@ -114,6 +114,7 @@ void        Response::buildResponse()
 
 int         Response::buildBody()
 {
+    std::cout << "build body\n";
     Location    loc;
 
     if (findMatchLocation(loc))
@@ -192,27 +193,14 @@ int         Response::buildBody()
 
         if (loc.getCgiExt().size() != 0)
         {
-            std::string file_extension = "." + getExtension(_request.getPath());
-            std::vector<std::string> cgi_ext = loc.getCgiExt();
-
-            std::cout << "file_extension = " << file_extension << std::endl;
-            for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
-            {
-                if (file_extension == (*it))
-                {
-                    // TODO: handle cgi
-                    cgi.setEnv(this->_request, loc);
-                    cgi.setArgs0(*it, loc);
-                    cgi.setCgiPath(_request.getPath());
-                    cgi.execCgi(_request);
-                    this->_cgi_status = true;
-                }
-            }
+            return (handleCgi(_target_file, loc));
+            
         }
 
     } else {
         // Case use parameter from server;
         _target_file = ft_join(_server.getRoot(), _request.getPath());
+        //std::cout << "_target_file = " << _target_file << std::endl;
 
         if (!readFile(_target_file, _body))
         {
@@ -226,8 +214,37 @@ int         Response::buildBody()
     return (0);
 }
 
+int Response::handleCgi(const std::string& tg, Location& loc)
+{
+    std::cout << "handle cgi\n";
+    if (tg.find("cgi-bin") == std::string::npos)
+        return 1;
+    std::string ext = tg.substr(tg.find("cgi-bin"));
+    //std::cout << "ext = " << ext << std::endl;
+    std::string file_extension = "." + getExtension(tg);
+    std::vector<std::string> cgi_ext = loc.getCgiExt();
+    //std::cout << "cgi body = " << this->_request.getBody() << std::endl;
+
+    for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
+    {
+        if (file_extension == (*it))
+        {
+            cgi.clear();
+            cgi.setArgs0(*it, loc);
+            cgi.setCgiPath(ext);
+            this->_cgi_status = true;
+            cgi.setEnv(this->_request, loc);
+            cgi.execCgi(_error, _status);
+            if (_error != 0)
+                return (1) ;
+        }
+    }
+    return 0;
+}
+
 std::string Response::buildHtmlIndex(const std::string& tar_dir)
 {
+    std::cout << "build html index\n";
     std::string html;
     DIR *dir;
     struct dirent *ent;
@@ -286,6 +303,7 @@ std::string Response::buildHtmlIndex(const std::string& tar_dir)
 
 void        Response::buildErrorBody()
 {
+    std::cout << "build error body\n";
     _body = "";
     if (_error_map.count(_error) > 0 && (_error >= 400 && _error < 500))
     {
@@ -382,5 +400,6 @@ void        Response::clear()
     this->_body = "";
     this->_target_file = "";
     this->_location = "";
+    this->_cgi_status = false;
     _request.clear();
 }

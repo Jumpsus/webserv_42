@@ -2,7 +2,7 @@
 
 Server::Server()
 {
-    std::cout << "start Server()" << std::endl;
+    //std::cout << "start Server()" << std::endl;
     /* set default value */
     _fd = 0;
     _host = 0;
@@ -16,7 +16,7 @@ Server::Server()
 
 Server::Server(std::string const serverConfig)
 {
-    std::cout << "start Server()" << std::endl;
+    //std::cout << "start Server()" << std::endl;
     initErrorPage();
     parseServer(serverConfig);
     if (_locations.size() == 0)

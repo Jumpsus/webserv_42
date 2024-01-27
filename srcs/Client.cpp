@@ -94,3 +94,14 @@ void        Client::updateTime()
     gettimeofday(&_time_stamp, NULL);
 }
 
+void        Client::fillReqBody()
+{
+    if (req.getBody().length() == 0)
+    {
+        std::fstream file;(resp.cgi.getCgiPath().c_str());
+        std::stringstream ss;
+
+        ss << file.rdbuf();
+        req.setBody(ss.str());
+    }
+}

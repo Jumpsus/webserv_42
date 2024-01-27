@@ -73,6 +73,7 @@ class Response {
         /*setter & getter*/
         std::string     getResponse();
         bool            getCgiStatus();
+        std::string     getCgiPath();
         void            setRequest(Request req);
         void            setServer(Server serv);
         void            setError(int error_code);
@@ -81,6 +82,7 @@ class Response {
 
         void            buildResponse();
         void            printResponse();
+        int             handleCgi(const std::string& tg, Location& loc);
         std::string     buildHtmlIndex(const std::string& tar_dir);
         void            clear();
         CgiHandler      cgi;

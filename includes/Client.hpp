@@ -26,6 +26,7 @@ class Client {
         void            clearContent();
 
         void            buildResponse();
+        void            fillReqBody();
         
         Request             req;
         Response            resp;
