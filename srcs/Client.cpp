@@ -48,7 +48,7 @@ bool    Client::feed(std::string input, size_t len)
 
     if (!r.parseRequest(_raw_request))
     {
-        std::cout << "parse Request failed" << std::endl; 
+        // std::cout << "parse Request failed" << std::endl; 
         return false;
     }
     setRequest(r);

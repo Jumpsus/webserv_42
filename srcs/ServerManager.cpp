@@ -155,7 +155,6 @@ void    ServerManager::acceptConnection(int server_fd)
     int                 client_fd;
     Client              new_client(_servers_map[server_fd]);
 
-    //std::cout << "start accept " << std::endl;
     if (!_servers_map.count(server_fd))
     {
         std::cerr << "could not found server map for fd : " << server_fd << std::endl;
@@ -186,8 +185,6 @@ void    ServerManager::acceptConnection(int server_fd)
     _clients_map.insert(std::pair<int, Client>(client_fd, new_client));
 
     addSet(client_fd, &_read_fd);
-
-    //std::cout << "got new fd: "<< client_fd << std::endl;
 }
 
 /* please mark read fd as non-bloacking before use recv() 
@@ -207,7 +204,9 @@ void    ServerManager::receiveRequest(int read_fd)
     }
 
     if (rc > 0) {
-        std::string req(buffer);
+        std::string req;
+        req.assign(buffer, buffer + rc);
+
         _clients_map[read_fd].updateTime();
         if (_clients_map[read_fd].feed(req, rc))
         {
