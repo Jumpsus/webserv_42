@@ -28,6 +28,7 @@ class CgiHandler {
         void                                setArgs0(const std::string& extension, const Location& loc_ptr);
         void                                setEnv(Request& request, Location& loc_ptr);
         void                                clear();
+        bool                                initPipes(int &error);
 
         /*checker*/
         void                                printEnv();

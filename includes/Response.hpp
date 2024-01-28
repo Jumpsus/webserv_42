@@ -73,17 +73,18 @@ class Response {
         /*setter & getter*/
         std::string     getResponse();
         bool            getCgiStatus();
-        std::string     getCgiPath();
+        std::string     getBody();
         void            setRequest(Request req);
         void            setServer(Server serv);
         void            setError(int error_code);
-        void            setResponse(const std::string& new_resp);
-        void            switchCgiStatus();
+        void            setBody(const std::string& new_body);
+        void            switchCgiOff();
 
         void            buildResponse();
         void            printResponse();
         int             handleCgi(const std::string& tg, Location& loc);
         std::string     buildHtmlIndex(const std::string& tar_dir);
+        void            editResponseToCgi();
         void            clear();
         CgiHandler      cgi;
         
