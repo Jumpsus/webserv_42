@@ -36,6 +36,7 @@ class Request {
         Request &operator=(Request const &req);
 
         bool                                isCompleted();
+        bool                                isMultipart();
         bool                                parseRequest(std::string req);
         
         const std::string&                  getMethod() const;
@@ -45,6 +46,7 @@ class Request {
         int                                 getError();
         const std::map<std::string, std::string>&  getHeader() const;
         const std::string&                  getBody() const;
+        const std::string&                  getBoundary() const;
 
         void                                setMethod(std::string method);
         void                                setPath(std::string path);
@@ -73,6 +75,8 @@ class Request {
         std::string                         _connection;
         int                                 _error;
         size_t                              _max_body_size;
+        bool                                _multipart;
+        std::string                         _boundary;
 
         bool                                handleChunked(std::string body);
 };

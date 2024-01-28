@@ -14,6 +14,8 @@ Request::Request()
     _protocol_version = "";
     _connection = "";
     _error = 0;
+    _multipart = false;
+    _boundary = "";
     _completed = false;
 }
 
@@ -32,6 +34,9 @@ Request::Request(Request const &req)
         this->_protocol = req._protocol;
         this->_protocol_version = req._protocol_version;
         this->_connection = req._connection;
+        this->_max_body_size = req._max_body_size;
+        this->_multipart = req._multipart;
+        this->_boundary = req._boundary;
         this->_error = req._error;
         this->_header = req._header;
         this->_completed = req._completed;
@@ -58,6 +63,9 @@ Request& Request::operator=(Request const &req)
         this->_protocol = req._protocol;
         this->_protocol_version = req._protocol_version;
         this->_connection = req._connection;
+        this->_max_body_size = req._max_body_size;
+        this->_multipart = req._multipart;
+        this->_boundary = req._boundary;
         this->_error = req._error;
         this->_header = req._header;
         this->_completed = req._completed;
@@ -130,11 +138,6 @@ bool    Request::parseRequest(std::string req)
             return true;
         }
         this->_header.insert(tempHeader);
-
-        if (tempHeader.first == "connection")
-        {
-            _connection = _connection.append(tempHeader.second);
-        }
         buffer = buffer.substr(found + 2, buffer.length());
     } while (buffer.length() > 0);
 
@@ -172,6 +175,24 @@ bool    Request::parseRequest(std::string req)
              _body_type = "chuncked";
              _body_length = 0;
         }
+    }
+
+    if (_header.count("content-type") > 0)
+    {
+        if (_header["content-type"].find("multipart/form-data") != std::string::npos)
+        {
+            size_t found = _header["content-type"].find("boundary=");
+            if (found != std::string::npos)
+            {
+                _boundary = _header["content-type"].substr(found + 9, _header["content-type"].length());
+            }
+            _multipart = true;
+        }
+    }
+
+    if (_header.count("connection") > 0)
+    {
+        _connection = _connection.append(_header["connection"]);
     }
 
     if (_body_type == "body" && buffer.length() < _body_length)
@@ -479,6 +500,9 @@ void Request::clear()
     _protocol_version = "";
     _connection = "";
     _error = 0;
+    _max_body_size = 0;
+    _multipart = false;
+    _boundary = "";
     _completed = false;
 }
 
