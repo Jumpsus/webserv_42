@@ -79,6 +79,11 @@ bool    Request::isCompleted()
     return (this->_completed);
 }
 
+bool    Request::isMultipart()
+{
+    return (this->_multipart);
+}
+
 /* https://www.rfc-editor.org/rfc/rfc7230.html#section-3 */
 /* return true case parse completed , false case parse incomplete */
 bool    Request::parseRequest(std::string req)
@@ -329,6 +334,11 @@ const std::string& Request::getVersion() const
 const std::string& Request::getBody() const
 {
     return (this->_body);
+}
+
+const std::string& Request::getBoundary() const
+{
+    return (this->_boundary);
 }
 
 void    Request::setBody(const std::string& newbody)
