@@ -62,9 +62,14 @@ std::string Response::getResponse()
     return (this->_response_content);   
 }
 
-void        Response::setResponse(const std::string& new_resp)
+std::string Response::getBody()
 {
-    this->_response_content = new_resp;
+    return this->_body;
+}
+
+void        Response::setBody(const std::string& new_body)
+{
+    this->_body = new_body;
 }
 
 void        Response::setRequest(Request req)
@@ -91,12 +96,10 @@ bool        Response::getCgiStatus()
     return this->_cgi_status;
 }
 
-void        Response::switchCgiStatus()
+void        Response::switchCgiOff()
 {
     if (this->_cgi_status == true)
         this->_cgi_status = false;
-    if (this->_cgi_status == false)
-        this->_cgi_status = true;
 }
 
 void        Response::buildResponse()
@@ -107,6 +110,29 @@ void        Response::buildResponse()
         _status = _error;
         buildErrorBody();
     }
+    appendFirstLine();
+    appendHeaders();
+    appendBody();
+}
+
+void        Response::editResponseToCgi()
+{
+    _response_content.clear();
+    int         body_len = _body.length();
+    std::string body_buff;
+    std::stringstream   ssb(_body);
+    int                 del_pos = 0;
+    while (getline(ssb, body_buff,'\n')) {
+        if (body_buff.find("Content-type:") != std::string::npos && body_buff.find("html") != std::string::npos)
+            _target_file = ".html";
+        if (body_buff.length() == 0)
+            del_pos++;
+        if (body_buff != "<!DOCTYPE html>" && body_buff != "<html>")
+            del_pos += body_buff.length();
+        else
+            break ;
+    }
+    _body = _body.substr(del_pos, body_len - del_pos);
     appendFirstLine();
     appendHeaders();
     appendBody();
@@ -205,7 +231,6 @@ int         Response::buildBody()
         if (loc.getCgiExt().size() != 0)
         {
             return (handleCgi(_target_file, loc));
-            
         }
 
     } else {
@@ -319,13 +344,17 @@ int Response::handleCgi(const std::string& tg, Location& loc)
             cgi.clear();
             cgi.setArgs0(*it, loc);
             cgi.setCgiPath(ext);
-            this->_cgi_status = true;
+            if (cgi.initPipes(_error) == true)
+                this->_cgi_status = true;
             cgi.setEnv(this->_request, loc);
             cgi.execCgi(_error, _status);
-            if (_error != 0)
-                return (1) ;
+            if (_error != 0) {
+                _status = _error;
+                return (1);
+            }
         }
     }
+    _status = 200;
     return 0;
 }
 

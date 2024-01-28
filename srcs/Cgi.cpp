@@ -105,11 +105,13 @@ std::string         CgiHandler::_getScriptFilename(const std::string& cgi_path)
 std::string         CgiHandler::_getRemoteAddress(const std::string& http_host)
 {
     std::string hostname = http_host.substr(0, http_host.find(':'));
+    std::string port = http_host.substr(http_host.find(':'));
+
     if (hostname.length() == 0)
         return "";
     if (hostname == "localhost")
-        return "127.0.0.1";
-    return hostname;
+        return "127.0.0.1" + port;
+    return hostname + port;
 }
 
 /*_env variables sources 
@@ -137,7 +139,8 @@ void                CgiHandler::setEnv(Request& request, Location& loc_ptr)
     std::map<std::string, std::string> headers = request.getHeader();
     if (headers.find("Auth-Scheme") != headers.end() && headers["Auth-Scheme"] != "")
         this->_env["AUTH_TYPE"] = headers["authorization"];
-
+    else
+        this->_env["AUTH_TYPE"] = "Basic";
     this->_env["CONTENT_LENGTH"] = headers["content-length"];
     this->_env["CONTENT_TYPE"] = headers["content-type"];
     this->_env["DOCUMENT_ROOT"] = loc_ptr.getRoot();
@@ -161,7 +164,6 @@ void                CgiHandler::setEnv(Request& request, Location& loc_ptr)
     this->_env["SCRIPT_FILENAME"] = _getScriptFilename(this->_cgiPath);
     this->_env["REMOTE_ADDR"] = _getRemoteAddress(headers["host"]);
     this->_env["SERVER_NAME"] = splitString(headers["host"], ":");
-    //std::cout << "set server port " << headers["host"] << std::endl;
     this->_env["SERVER_PORT"] = headers["host"];
     this->_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_env["SERVER_SOFTWARE"] = "WEBSERV";
@@ -184,6 +186,25 @@ char**              CgiHandler::_envToCstrArr() const
     return c_env;
 }
 
+bool                CgiHandler::initPipes(int &error)
+{
+    //can't pipe pipe_in
+    if (pipe(pipe_in) < 0) {
+        std::cerr << "Fail to create pipe_in\n";
+        error = 500;
+        return false;
+    }
+    //can't pipe pipe_out
+    if (pipe(pipe_out) < 0) {
+        std::cerr << "Fail to create pipe_out\n";
+        close(pipe_in[0]);
+        close(pipe_in[1]);
+        error = 500;
+        return false;
+    }
+    return true;
+}
+
 void                CgiHandler::execCgi(int &error, int &status)
 {
     //can't set _args
@@ -200,20 +221,6 @@ void                CgiHandler::execCgi(int &error, int &status)
         error = 500;
         return ;
     }
-    //can't pipe pipe_in
-    if (pipe(pipe_in) < 0) {
-        std::cerr << "Fail to create pipe_in\n";
-        error = 500;
-        return ;
-    }
-    //can't pipe pipe_out
-    if (pipe(pipe_out) < 0) {
-        std::cerr << "Fail to create pipe_out\n";
-        close(pipe_in[0]);
-        close(pipe_in[1]);
-        error = 500;
-        return ;
-    }
     //start fork process
     _cgi_pid = fork();
     if (_cgi_pid < 0) {
@@ -222,7 +229,7 @@ void                CgiHandler::execCgi(int &error, int &status)
     }
     //successful fork
     else if (_cgi_pid == 0) {
-        extern char**       environ;
+        //extern char**       environ;
         //for (int i = 0; _args[i]; i++)
         //    std::cout << _args[i] << std::endl;
         //std::cout << std::endl;
@@ -235,8 +242,8 @@ void                CgiHandler::execCgi(int &error, int &status)
         close(pipe_in[1]);
         close(pipe_out[0]);
         close(pipe_out[1]);
-        execve(_args[0], _args, environ);
-        exit(0);
+        status = execve(_args[0], _args, _cgi_env);
+        exit(status);
     }
 }
 
