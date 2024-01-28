@@ -3,7 +3,7 @@
 
 # define MAX_CONNECTION 1000
 # define CONNECTION_TIMEOUT 30
-# define CLIENT_BUFFER 1000
+# define CLIENT_BUFFER 100000
 
 # include "Webserv.hpp"
 # include "config/Server.hpp"

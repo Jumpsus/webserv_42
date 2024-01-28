@@ -168,7 +168,6 @@ void    ServerManager::acceptConnection(int server_fd)
     int                 client_fd;
     Client              new_client(_servers_map[server_fd]);
 
-    //std::cout << "start accept " << std::endl;
     if (!_servers_map.count(server_fd))
     {
         std::cerr << "could not found server map for fd : " << server_fd << std::endl;
@@ -199,8 +198,6 @@ void    ServerManager::acceptConnection(int server_fd)
     _clients_map.insert(std::pair<int, Client>(client_fd, new_client));
 
     addSet(client_fd, &_read_fd);
-
-    //std::cout << "got new fd: "<< client_fd << std::endl;
 }
 
 /* please mark read fd as non-bloacking before use recv() 
@@ -220,7 +217,9 @@ void    ServerManager::receiveRequest(int read_fd)
     }
 
     if (rc > 0) {
-        std::string req(buffer);
+        std::string req;
+        req.assign(buffer, buffer + rc);
+
         _clients_map[read_fd].updateTime();
         if (_clients_map[read_fd].feed(req, rc))
         {
@@ -252,14 +251,12 @@ void    ServerManager::writeResponse(int write_fd)
     std::cout << "write response, write_fd = " << write_fd << std::endl;
     std::string resp = _clients_map[write_fd].getResponse();
 
-    //std::cout << "Response = " << resp << std::endl;
 
     /* After recv fd is set not ready for read until Client cancelled connection */
     int rc = send(write_fd, resp.c_str(), resp.length(), 0);
     
     if (rc < 0) {
         std::cerr << "[Crash] error send: " << errno << " end server now" << std::endl;
-        //std::cout << "[Crash] error send: " << errno << " end server now" << std::endl;
         closeConnection(write_fd);
         return ;
     }
