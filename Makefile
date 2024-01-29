@@ -9,7 +9,7 @@ SRCS =	srcs/utils.cpp \
 		srcs/Cgi.cpp
 
 all:
-	c++ -std=c++98 main.cpp ${SRCS} -I includes -o webserv
+	c++ -std=c++98 -Wall -Wextra -Werror main.cpp ${SRCS} -I includes -o webserv
 
 clean:
 	rm webserv
