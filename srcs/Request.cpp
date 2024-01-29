@@ -158,7 +158,7 @@ bool    Request::parseRequest(std::string req)
         if (!ft_isdigit(_header["content-length"]))
         {
             std::cout << "content-length is not digit " <<  _header["content-length"] <<std::endl;
-            for (int i = 0; i < _header["content-length"].length(); i++)
+            for (size_t i = 0; i < _header["content-length"].length(); i++)
             {
                 int x = _header["content-length"][i];
                 std::cout << x << " " << std::endl;

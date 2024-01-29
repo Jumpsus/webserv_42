@@ -93,11 +93,11 @@ void                CgiHandler::setArgs0(const std::string& extension, const Loc
 
 std::string         CgiHandler::_getScriptFilename(const std::string& cgi_path)
 {
-    int pos = cgi_path.find("cgi-bin/");
+    size_t pos = cgi_path.find("cgi-bin/");
 
     if (pos == std::string::npos)
         return "";
-    if (pos + 8 > (int)cgi_path.size())
+    if (pos + 8 > cgi_path.size())
         return "";
     return cgi_path.substr(pos + 8, cgi_path.size());
 }
