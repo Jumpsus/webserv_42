@@ -298,7 +298,7 @@ int         Response::buildBody()
             return (0);
         }
 
-        std::ofstream file(_target_file, std::ios::binary);
+        std::ofstream file(_target_file.c_str(), std::ios::binary);
         if (file.fail())
         {
             _error = 404;
@@ -421,6 +421,7 @@ void        Response::buildErrorBody()
 {
     std::cout << "build error body\n";
     _body = "";
+    _target_file = ".html";
     if (_error_map.count(_error) > 0 && (_error >= 400 && _error < 500))
     {
         _location =  _error_map[_error];
