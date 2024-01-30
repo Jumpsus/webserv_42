@@ -371,7 +371,7 @@ std::string Response::buildHtmlIndex(const std::string& tar_dir)
     {
         /*make css format header*/
         html.append("<!DOCTYPE html>\n<html>\n\t<head>\n");
-        html.append("\t\t<title> index of " + tar_dir + "<title>\n");
+        html.append("\t\t<title> index of " + tar_dir + "</title>\n");
         html.append("\t\t<style>\n\t\t\ttable, th, td{\n\t\t\t\tborder-collapse: collapse;\n\t\t\t}\n");
         html.append("\t\t\tth, td{\n\t\t\t\tpadding: 5px;\n\t\t\t}\n");
         html.append("\t\t\tth {\n\t\t\t\ttext-align: left;\n\t\t}\n");
@@ -412,7 +412,7 @@ std::string Response::buildHtmlIndex(const std::string& tar_dir)
             html.append("</td>\n\t\t\t</tr>");
         }
         closedir(dir);
-        html.append("\t\t<table>\n\t</body>\n</html>\n");
+        html.append("\t\t/table>\n\t</body>\n</html>\n");
         return html;
     }
     else
