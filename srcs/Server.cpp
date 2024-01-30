@@ -155,7 +155,7 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
             return false;
         }
 
-        if (isFileExists(value[1]))
+        if (isFileExists(ft_join(this->_root, value[1])))
         {
             this->_error_page[ft_stoi(value[0])] = value[1];
         }
