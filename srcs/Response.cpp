@@ -176,7 +176,7 @@ int         Response::buildBody()
         //handle alias
         if (!loc.getAlias().empty())
         {
-            _target_file = ft_join(loc.getAlias(), _request.getPath().substr(0, loc.getPath().length()));
+            _target_file = ft_join(loc.getAlias(), _request.getPath().substr(loc.getPath().length()));
         } else {
             _target_file = ft_join(loc.getRoot(), _request.getPath());
         }
