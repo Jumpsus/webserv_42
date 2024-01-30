@@ -244,7 +244,7 @@ int         Response::buildBody()
             {
                 _status = 301;
                 _location = _request.getPath() + "/";
-                return (1);
+                return (0);
             }
 
             std::vector<std::string> indexs = _server.getIndex();
@@ -264,7 +264,6 @@ int         Response::buildBody()
             {
                 if (_server.getAutoIndex())
                 {
-                    // TODO: handle auto index
                     _body = buildHtmlIndex(_target_file);
                     if (_body == "") {
                         _error = 500;
