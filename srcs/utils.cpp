@@ -625,3 +625,18 @@ std::string ft_find_by_keyword(std::vector<std::string> vec, const std::string& 
     }
     return "";
 }
+
+void	*ft_memset(void *b, int c, size_t len)
+{
+	char	*set;
+	size_t	count;
+
+	set = (char *)b;
+	count = 0;
+	while (count < len)
+	{
+		set[count] = (char)c;
+		count++;
+	}
+	return (b);
+}

@@ -216,7 +216,7 @@ void    ServerManager::receiveRequest(int read_fd)
             if (_clients_map[read_fd].resp.getCgiStatus() == true)
                 writeCgi(read_fd, _clients_map[read_fd].resp.cgi);
         }
-        memset(buffer, 0, sizeof(buffer));
+        ft_memset(buffer, 0, sizeof(buffer));
         return ;
     }
 
@@ -297,7 +297,7 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
         std::string cgi_body = _clients_map[read_fd].resp.getBody();
         cgi_body.append(pipe_out, byte_read);
         _clients_map[read_fd].resp.setBody(cgi_body);
-        memset(pipe_out, 0, sizeof(pipe_out));
+        ft_memset(pipe_out, 0, sizeof(pipe_out));
     }
     else if (byte_read < 0) {
         std::cerr << "Fail to read cgi response\n";

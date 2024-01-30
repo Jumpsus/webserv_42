@@ -287,6 +287,7 @@ int         Response::buildBody()
     {
         if (!readFile(_target_file, _body))
         {
+            std::cout << "target = " << _target_file << std::endl;
             _error = 404;
             return (1);
         }

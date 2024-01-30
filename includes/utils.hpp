@@ -30,6 +30,7 @@ bool                                isFileExists(std::string file_location);
 bool                                isDirectory(std::string file_location);
 std::string                         defaultErrorPage(int error);
 
+void	                            *ft_memset(void *b, int c, size_t len);
 bool                                ft_isdigit(const std::string& input);
 bool                                ft_ishex(std::string input);
 int                                 ft_stoi(const std::string& input);

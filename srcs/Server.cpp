@@ -315,7 +315,7 @@ void                        Server::setServer()
         exit (-1);
     }
     /*bind the socket*/
-    memset(&addr, 0, sizeof(addr));
+    ft_memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = this->_host;
     addr.sin_port = htons(this->_port);
