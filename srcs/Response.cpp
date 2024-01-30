@@ -265,6 +265,7 @@ int         Response::buildBody()
                 if (_server.getAutoIndex())
                 {
                     // TODO: handle auto index
+                    _target_file = _target_file + "/index.html";
                     _body = buildHtmlIndex(_target_file);
                     if (_body == "") {
                         _error = 500;
