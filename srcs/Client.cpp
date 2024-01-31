@@ -21,6 +21,7 @@ Client::Client(Client const &cli): _serv(cli._serv)
         this->req = cli.req;
         this->resp = cli.resp;
         _raw_request = cli._raw_request;
+        _time_stamp = cli.getTime();
     }
 }
 
@@ -32,27 +33,13 @@ Client &Client::operator=(Client const &cli)
         this->req = cli.req;
         this->resp = cli.resp;
         _raw_request = cli._raw_request;
+        _time_stamp = cli.getTime();
     }
 
     return (*this);
 }
 
 Client::~Client() {}
-
-unsigned long Client::getServerHost()
-{
-    return this->_serv.getHost();
-}
-
-int     Client::getServerPort()
-{
-    return this->_serv.getPort();
-}
-
-void    Client::setServer(const Server& serv)
-{
-    this->_serv = serv;
-}
 
 void    Client::setSocket(int newsock)
 {

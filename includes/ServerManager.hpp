@@ -40,7 +40,6 @@ class ServerManager {
         void                    addSet(int fd, fd_set* set);
         void                    removeSet(int fd, fd_set* set);
         void                    checkTimeout();
-        void                    assignServer(Client &c);
         void                    writeCgi(int write_fd, CgiHandler& cgi);
         void                    readCgi(int read_fd, CgiHandler& cgi);
 };

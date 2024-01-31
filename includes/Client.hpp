@@ -18,9 +18,6 @@ class Client {
         ~Client();
 
         /*relate to internal server*/
-        unsigned long       getServerHost();
-        int                 getServerPort();
-        void                setServer(const Server& serv);
         void                setSocket(int newsock);
 
         /*related to request and response*/
