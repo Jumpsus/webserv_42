@@ -5,6 +5,15 @@
 # define CONNECTION_TIMEOUT 60
 # define CLIENT_BUFFER 100000
 
+# define RESET          "\x1B[0m"
+# define RED            "\x1B[31m"
+# define WHITE          "\x1B[37m"
+# define YELLOW         "\x1B[33m"
+# define BLUE           "\x1B[94m"
+# define CYAN           "\x1B[36m"
+
+# define MAGENTA        "\x1B[95m"
+
 # include "Webserv.hpp"
 # include "config/Server.hpp"
 # include "Client.hpp"

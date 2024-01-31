@@ -38,8 +38,7 @@ ServerManager::~ServerManager() {}
 
 void    ServerManager::setServers()
 {
-    std::cout << std::endl;
-    //Logger::logMsg(MAGENTA, CONSOLE_OUTPUT, "Initializing  Servers...");
+    std::cout << std::endl << YELLOW << "Initializing Servers" << RESET << std::endl;
     for (std::vector<Server>::iterator it = this->_servers.begin();
          it != this->_servers.end(); it ++)
     {
@@ -61,9 +60,8 @@ void    ServerManager::setServers()
         {
             it->setServer();
         }
-        std::cout << "Set Server:" << it->getHost() << " Port:" << it->getPort() << " at fd: " << it->getFd() << std::endl;
-        //Logger::logMsg(MAGENTA, CONSOLE_OUTPUT, "Server Created: ServerName[%s] Host[%lu] Port[%d]",it->getServerName().c_str(),
-        //        it->getHost() , it->getPort());
+        std::cout << YELLOW << "Set Server:" << it->getHost() << " Port:" << it->getPort() << " at fd: " << 
+                                it->getFd() << RESET << std::endl;
     }
     return;
 }
@@ -89,13 +87,13 @@ void    ServerManager::startServers()
         //std::cout << "ready " << ready << std::endl;
         if (ready < 0)
         {
-            std::cerr << "select failed: " << errno << std::endl;
+            std::cerr << RED << "select failed: " << errno << RESET << std::endl;
             break;
         }
 
         if (ready == 0)
         {
-            std::cerr << "select timeout: " << errno << std::endl;
+            std::cerr << YELLOW << "select timeout: " << errno << RESET << std::endl;
             break;
         }
 
@@ -107,7 +105,7 @@ void    ServerManager::startServers()
             } else if (FD_ISSET(i, &current_read)) {
                 receiveRequest(i);
                 ready--;
-            } else if (FD_ISSET(i, &current_write)) {     
+            } else if (FD_ISSET(i, &current_write)) {
                 writeResponse(i);
                 ready--;
             }
@@ -115,7 +113,7 @@ void    ServerManager::startServers()
         checkTimeout();
     } while(1);
 
-    std::cout << "graceful exit()" << std::endl;
+    std::cout << YELLOW << "graceful exit()" << RESET << std::endl;
 }
 
 void    ServerManager::startlisten()
@@ -129,12 +127,12 @@ void    ServerManager::startlisten()
         /*set the listen back log*/
         if (listen(it->getFd(), MAX_CONNECTION) < 0)
         {
-            std::cerr << "listen fd " << it->getFd() << " error : " << std::endl;
+            std::cerr << RED << "listen fd " << it->getFd() << " error : " <<  RESET << std::endl;
             exit (-1);
         }
 
         if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
-            std::cerr << "fcntl fd " << it->getFd() << " error : " << std::endl;
+            std::cerr << RED << "fcntl fd " << it->getFd() << " error : " << RESET << std::endl;
             exit (-1);
         }
         
@@ -158,11 +156,11 @@ void    ServerManager::acceptConnection(int server_fd)
     socklen_t           client_addr_len = sizeof(client_addr);
     int                 client_fd;
     Client              new_client(_servers_map[server_fd]);
-    //char                buf[INET_ADDRSTRLEN];
+    char                buf[INET_ADDRSTRLEN];
 
     if (!_servers_map.count(server_fd))
     {
-        std::cerr << "could not found server map for fd : " << server_fd << std::endl;
+        std::cerr << RED << "could not found server map for fd : " << server_fd << RESET << std::endl;
         exit(-1);
     }
     client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
@@ -170,12 +168,12 @@ void    ServerManager::acceptConnection(int server_fd)
     {
         if (errno != EWOULDBLOCK)
         {
-            std::cerr << "error accept:" << errno << " end server now" << std::endl;
+            std::cerr << RED << "error accept:" << errno << " end server now" << RESET << std::endl;
         }
         return ;
     }
-    //Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "New Connection From %s, Assigned Socket %d",inet_ntop(AF_INET, &client_addr
-    //                , buf, INET_ADDRSTRLEN), client_fd);
+    std::cout << YELLOW << "New connection from " << inet_ntop(AF_INET, &client_addr, buf, INET_ADDRSTRLEN) <<
+                            ", Assigned socket " << client_fd << RESET << std::endl;
     if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
     {
         std::cerr << "fcntl fd " << client_fd << " error : " << std::endl;
@@ -205,7 +203,7 @@ void    ServerManager::receiveRequest(int read_fd)
     int rc = recv(read_fd, buffer, sizeof(buffer), 0);
 
     if (rc < 0) {
-        std::cerr << "[Crash] error recv: " << errno << " at fd " << read_fd << " end server now" << std::endl;
+        std::cerr << RED << "[Crash] error recv: " << errno << " at fd " << read_fd << " end server now" << RESET << std::endl;
         closeConnection(read_fd);
         return ;
     }
@@ -217,13 +215,15 @@ void    ServerManager::receiveRequest(int read_fd)
         _clients_map[read_fd].updateTime();
         if (_clients_map[read_fd].feed(req, rc))
         {
-            //Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Request Recived From Socket %d, Method=<%s>  URI=<%s>"
-            //                , read_fd, _clients_map[read_fd].req.getMethod().c_str(), _clients_map[read_fd].req.getPath().c_str());
+            std::cout << CYAN << "Request received from Socket " << read_fd << " Method = " << 
+                                    _clients_map[read_fd].req.getMethod() << " URI= " << _clients_map[read_fd].req.getPath() << 
+                                    RESET << std::endl; 
             _clients_map[read_fd].buildResponse();
             removeSet(read_fd, &_read_fd);
             addSet(read_fd, &_write_fd);
-            if (_clients_map[read_fd].resp.getCgiStatus() == true)
+            if (_clients_map[read_fd].resp.getCgiStatus() == true) {
                 writeCgi(read_fd, _clients_map[read_fd].resp.cgi);
+            }
         }
         ft_memset(buffer, 0, sizeof(buffer));
         return ;
@@ -231,7 +231,7 @@ void    ServerManager::receiveRequest(int read_fd)
 
     /* Client send close connection */
     if (rc == 0) {
-        std::cout << "Client Fd " << read_fd << " Closed connection!" << std::endl;
+        std::cout << CYAN << "Client Fd " << read_fd << " Closed connection!" << RESET << std::endl;
         closeConnection(read_fd);
     }
 }
@@ -252,15 +252,16 @@ void    ServerManager::writeResponse(int write_fd)
     int rc = send(write_fd, resp.c_str(), resp.length(), 0);
     
     if (rc < 0) {
-        std::cerr << "[Crash] error send: " << errno << " at fd " << write_fd << " end server now" << std::endl;
+        std::cerr << RED << "[Crash] error send: " << errno << " at fd " << write_fd << " end server now" << 
+                    RESET << std::endl;
         closeConnection(write_fd);
         return ;
     }
     
     if (_clients_map[write_fd].req.keepAlive())
     {
-        //Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Response Sent To Socket %d, Stats=<%d>"
-        //                    , write_fd, _clients_map[write_fd].resp.getStatus());
+        std::cout << CYAN << "Response send to Socket " << write_fd << " Stats = " << 
+                                    _clients_map[write_fd].resp.getStatus() << RESET << std::endl; 
         _clients_map[write_fd].clearContent();
         removeSet(write_fd, &_write_fd);
         addSet(write_fd, &_read_fd);
@@ -281,7 +282,7 @@ void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
         body_sent = write(cgi.pipe_in[1], body.c_str(), body.length());
     
     if (body_sent < 0) {
-        std::cerr << "Fail to send body to cgi\n";
+        std::cerr << RED << "Fail to send body to cgi" << RESET << std::endl;
         close(cgi.pipe_in[1]);
         close(cgi.pipe_out[1]);
         _clients_map[write_fd].resp.setError(500);
@@ -301,7 +302,7 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
     char    pipe_out[MESSAGE_BUFFER * 2];
     int     byte_read = read(cgi.pipe_out[0], pipe_out, MESSAGE_BUFFER * 2);
 
-    //std::cout << "pipe_out = " << pipe_out << std::endl;
+    std::cout << "pipe_out = " << pipe_out << std::endl;
     //std::cout << "before cgi response = " << _clients_map[read_fd].getResponse() << std::endl;
     if (byte_read > 0) {
         _clients_map[read_fd].updateTime();
@@ -312,14 +313,13 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
         ft_memset(pipe_out, 0, sizeof(pipe_out));
     }
     else if (byte_read < 0) {
-        std::cerr << "Fail to read cgi response\n";
+        std::cerr << RED << "Fail to read cgi response" << RESET << std::endl;
         close(cgi.pipe_in[0]);
         close(cgi.pipe_out[0]);
         _clients_map[read_fd].resp.switchCgiOff();
         _clients_map[read_fd].resp.setError(500);
     }
     else {
-        //std::cout << "Read finished\n";
         close(cgi.pipe_in[0]);
         close(cgi.pipe_out[0]);
 
@@ -393,7 +393,7 @@ void    ServerManager::checkTimeout()
     {
         if (time(NULL) - cit->second.getTime() > CONNECTION_TIMEOUT)
         {
-            //Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "Client %d Timeout, Closing Connection..", cit->first);
+            std::cout << YELLOW << "Client " << cit->first << " Timeout, closing connection" << RESET << std::endl;
             closeConnection(cit->first);
             return ;
         }   
