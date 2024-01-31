@@ -176,7 +176,7 @@ int         Response::buildBody()
         //handle alias
         if (!loc.getAlias().empty())
         {
-            _target_file = ft_join(loc.getAlias(), _request.getPath().substr(0, loc.getPath().length()));
+            _target_file = ft_join(loc.getAlias(), _request.getPath().substr(loc.getPath().length()));
         } else {
             _target_file = ft_join(loc.getRoot(), _request.getPath());
         }
@@ -244,7 +244,7 @@ int         Response::buildBody()
             {
                 _status = 301;
                 _location = _request.getPath() + "/";
-                return (1);
+                return (0);
             }
 
             std::vector<std::string> indexs = _server.getIndex();
@@ -264,12 +264,12 @@ int         Response::buildBody()
             {
                 if (_server.getAutoIndex())
                 {
-                    // TODO: handle auto index
                     _body = buildHtmlIndex(_target_file);
                     if (_body == "") {
                         _error = 500;
                         return (1);
                     }
+                    _target_file = _target_file + "/index.html";
                     return (0);
                 } else {
                     _error = 403;
@@ -287,6 +287,7 @@ int         Response::buildBody()
     {
         if (!readFile(_target_file, _body))
         {
+            std::cout << "target = " << _target_file << std::endl;
             _error = 404;
             return (1);
         }
@@ -298,7 +299,7 @@ int         Response::buildBody()
             return (0);
         }
 
-        std::ofstream file(_target_file, std::ios::binary);
+        std::ofstream file(_target_file.c_str(), std::ios::binary);
         if (file.fail())
         {
             _error = 404;
@@ -369,7 +370,7 @@ std::string Response::buildHtmlIndex(const std::string& tar_dir)
     {
         /*make css format header*/
         html.append("<!DOCTYPE html>\n<html>\n\t<head>\n");
-        html.append("\t\t<title> index of " + tar_dir + "<title>\n");
+        html.append("\t\t<title> index of " + tar_dir + "</title>\n");
         html.append("\t\t<style>\n\t\t\ttable, th, td{\n\t\t\t\tborder-collapse: collapse;\n\t\t\t}\n");
         html.append("\t\t\tth, td{\n\t\t\t\tpadding: 5px;\n\t\t\t}\n");
         html.append("\t\t\tth {\n\t\t\t\ttext-align: left;\n\t\t}\n");
@@ -410,7 +411,7 @@ std::string Response::buildHtmlIndex(const std::string& tar_dir)
             html.append("</td>\n\t\t\t</tr>");
         }
         closedir(dir);
-        html.append("\t\t<table>\n\t</body>\n</html>\n");
+        html.append("\t\t/table>\n\t</body>\n</html>\n");
         return html;
     }
     else
@@ -421,6 +422,7 @@ void        Response::buildErrorBody()
 {
     std::cout << "build error body\n";
     _body = "";
+    _target_file = ".html";
     if (_error_map.count(_error) > 0 && (_error >= 400 && _error < 500))
     {
         _location =  _error_map[_error];

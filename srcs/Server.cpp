@@ -155,7 +155,7 @@ bool Server::setServerParameter(std::string param, std::vector<std::string> valu
             return false;
         }
 
-        if (isFileExists(value[1]))
+        if (isFileExists(ft_join(this->_root, value[1])))
         {
             this->_error_page[ft_stoi(value[0])] = value[1];
         }
@@ -315,7 +315,7 @@ void                        Server::setServer()
         exit (-1);
     }
     /*bind the socket*/
-    memset(&addr, 0, sizeof(addr));
+    ft_memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = this->_host;
     addr.sin_port = htons(this->_port);

@@ -98,12 +98,11 @@ void    ServerManager::startServers()
         {            
             if (FD_ISSET(i, &_server_fd))
             {
-                //std::cout << "accept "<< std::endl;
                 acceptConnection(i);
             } else if (FD_ISSET(i, &current_read)) {
                 receiveRequest(i);
                 ready--;
-            } else if (FD_ISSET(i, &current_write)) {       
+            } else if (FD_ISSET(i, &current_write)) {     
                 writeResponse(i);
                 ready--;
             }
@@ -216,7 +215,7 @@ void    ServerManager::receiveRequest(int read_fd)
             if (_clients_map[read_fd].resp.getCgiStatus() == true)
                 writeCgi(read_fd, _clients_map[read_fd].resp.cgi);
         }
-        memset(buffer, 0, sizeof(buffer));
+        ft_memset(buffer, 0, sizeof(buffer));
         return ;
     }
 
@@ -297,7 +296,7 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
         std::string cgi_body = _clients_map[read_fd].resp.getBody();
         cgi_body.append(pipe_out, byte_read);
         _clients_map[read_fd].resp.setBody(cgi_body);
-        memset(pipe_out, 0, sizeof(pipe_out));
+        ft_memset(pipe_out, 0, sizeof(pipe_out));
     }
     else if (byte_read < 0) {
         std::cerr << "Fail to read cgi response\n";
@@ -332,7 +331,7 @@ void    ServerManager::addSet(int fd, fd_set* set)
 
 void    ServerManager::removeSet(int fd, fd_set* set)
 {
-    //std::cout << "remove fd = " << fd << std::endl;
+    // std::cout << "remove fd = " << fd << " current max_fd = " << _max_fd <<std::endl;
     FD_CLR(fd, set);
 
     int temp_max = 0;
@@ -352,9 +351,8 @@ void    ServerManager::removeSet(int fd, fd_set* set)
                 temp_max = i;
             }
         }
-        
+        _max_fd = temp_max;
     }
-    _max_fd = temp_max;
 }
 
 void    ServerManager::closeConnection(int fd)

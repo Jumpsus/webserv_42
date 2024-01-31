@@ -67,7 +67,7 @@ bool    ft_isdigit(const std::string& input) //this declaration is more memory e
 // accept only lower case
 bool    ft_ishex(std::string input)
 {
-    for (int i = 0; i < input.length(); i++)
+    for (size_t i = 0; i < input.length(); i++)
     {
         if ((input[i] >= '0' && input[i] <= '9') || 
             (input[i] >= 'a' && input[i] <= 'f'))
@@ -105,7 +105,7 @@ int     ft_htoi(std::string input)
         return 0;
     }
 
-    for (int i = 0; i < input.length(); i++)
+    for (size_t i = 0; i < input.length(); i++)
     {
         if (input[i] >= '0' && input[i] < '9')
         {
@@ -191,7 +191,7 @@ std::string ft_tolower(std::string input)
     std::string res = input;
     int offset = 'A' - 'a';
 
-    for (int i = 0; i < res.length(); i++)
+    for (size_t i = 0; i < res.length(); i++)
     {
         if (res[i] >= 'A' && res[i] <= 'Z')
         {
@@ -390,7 +390,7 @@ bool    ft_isURI(const std::string& word)
 {
     /* : / ? # [ ] @ ! $ & ' ( ) * + , ; = */
     /*all alphabet, number, - , . , _ , ~*/
-    for (int i = 0; i < word.length(); i++)
+    for (size_t i = 0; i < word.length(); i++)
     {
         if ( !((word[i] >= '#' && word[i] <= ';') || (word[i] >= '?' && word[i] <= '[') || (word[i] >= 'a' && word[i] <= 'z') ||
                 word[i] == '!' || word[i] == '=' || word[i] == ']' || word[i] == '_' || word[i] == '~') )
@@ -624,4 +624,19 @@ std::string ft_find_by_keyword(std::vector<std::string> vec, const std::string& 
             return iter_buff;
     }
     return "";
+}
+
+void	*ft_memset(void *b, int c, size_t len)
+{
+	char	*set;
+	size_t	count;
+
+	set = (char *)b;
+	count = 0;
+	while (count < len)
+	{
+		set[count] = (char)c;
+		count++;
+	}
+	return (b);
 }
