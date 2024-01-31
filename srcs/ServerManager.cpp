@@ -158,7 +158,7 @@ void    ServerManager::acceptConnection(int server_fd)
     socklen_t           client_addr_len = sizeof(client_addr);
     int                 client_fd;
     Client              new_client(_servers_map[server_fd]);
-    char                buf[INET_ADDRSTRLEN];
+    //char                buf[INET_ADDRSTRLEN];
 
     if (!_servers_map.count(server_fd))
     {
@@ -391,8 +391,6 @@ void    ServerManager::checkTimeout()
 {
     for (std::map<int, Client>::iterator cit = _clients_map.begin(); cit != _clients_map.end(); cit++)
     {
-        struct timeval  sm_curr;
-        gettimeofday(&sm_curr, NULL);
         if (time(NULL) - cit->second.getTime() > CONNECTION_TIMEOUT)
         {
             //Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "Client %d Timeout, Closing Connection..", cit->first);
