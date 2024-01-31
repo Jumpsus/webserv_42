@@ -69,8 +69,8 @@ bool    ft_ishex(std::string input)
 {
     for (size_t i = 0; i < input.length(); i++)
     {
-        if ((input[i] >= '0' && input[i] <= '9') || 
-            (input[i] >= 'a' && input[i] <= 'f'))
+        if ((input[i] < '0' || input[i] > '9') && 
+            (input[i] < 'a' || input[i] > 'f'))
         {
             return false;
         }

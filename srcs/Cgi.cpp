@@ -283,8 +283,9 @@ std::string             CgiHandler::_decodeQuery(std::string req_query)
     {
         if (req_query.length() < p_pos + 2)
             break ;
-        char    r_char = ft_htoi(req_query.substr(p_pos + 1, 2));
-        req_query.replace(p_pos, 3, ft_to_string(r_char));
+        std::string slice = ft_tolower(req_query.substr(p_pos + 1, 2));
+        std::string char_buf(1, ft_htoi(slice));
+        req_query.replace(p_pos, 3, char_buf);
         p_pos = req_query.find("%");
     }
     return req_query;

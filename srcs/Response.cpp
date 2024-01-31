@@ -123,21 +123,38 @@ void        Response::buildResponse()
 void        Response::editResponseToCgi()
 {
     _response_content.clear();
-    int         body_len = _body.length();
-    std::string body_buff;
-    std::stringstream   ssb(_body);
-    int                 del_pos = 0;
-    while (getline(ssb, body_buff,'\n')) {
-        if (body_buff.find("Content-type:") != std::string::npos && body_buff.find("html") != std::string::npos)
-            _target_file = ".html";
-        if (body_buff.length() == 0)
-            del_pos++;
-        if (body_buff != "<!DOCTYPE html>" && body_buff != "<html>")
-            del_pos += body_buff.length();
+    
+    int index = 0;
+    std::string     current_param;
+    std::string     buf_body = _body;
+    std::string     word;
+    
+    while (index < (int)_body.length()) 
+    {
+        if (ft_is_white_space(_body[index]))
+        {
+            index++;
+            continue;
+        }
+        buf_body = _body.substr(index, _body.length());
+        word = findNextWord(buf_body);
+        if (word.find('<') != std::string::npos && word.find('>') != std::string::npos)
+            break;
+        if (word == "Content-type:")
+        {
+            current_param = word;
+            index += word.length();
+        }
+        else if (current_param == "Content-type:" && word != current_param)
+        {
+            if (word.find("html") != std::string::npos)
+                _target_file = ".html";
+            index += word.length();
+        }
         else
-            break ;
+            index += word.length();
     }
-    _body = _body.substr(del_pos, body_len - del_pos);
+    _body = buf_body;
     appendFirstLine();
     appendHeaders();
     appendBody();
@@ -488,7 +505,7 @@ void        Response::appendHeaders()
 void        Response::appendBody()
 {
     _response_content.append(_body);
-    std::cout << "body = " << _body << std::endl;
+    //std::cout << "body = " << _body << std::endl;
 }
 
 bool        Response::findMatchLocation(Location &loc)
