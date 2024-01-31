@@ -17,30 +17,34 @@ class Client {
         Client &operator=(Client const &cli);
         ~Client();
 
-        void            setSocket(int fd);
+        /*relate to internal server*/
+        unsigned long       getServerHost();
+        int                 getServerPort();
+        void                setServer(const Server& serv);
+        void                setSocket(int newsock);
+
+        /*related to request and response*/
         bool            feed(std::string input, size_t len); // return true when request is complete
-        
         void            setRequest(Request req);
         std::string     getResponse();
         bool            keepAlive();
         void            clearContent();
-
         void            buildResponse();
         void            fillReqBody();
-        
-        Request             req;
-        Response            resp;
+        Request         req;
+        Response        resp;
 
-        const struct timeval&   getTime() const; //get time stamp
-        void                    updateTime(); //update time stamp
+        /*relate to time*/
+        const time_t&   getTime() const; //get time stamp
+        void            updateTime(); //update time stamp
 
     private:
-        int                 _socket_fd;
-        Server              _serv;
+        int             _socket;
+        Server          _serv;
         
-        struct timeval      _time_stamp;
+        time_t          _time_stamp;
 
-        std::string         _raw_request;
+        std::string     _raw_request;
 };
 
 #endif
