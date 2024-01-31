@@ -291,6 +291,7 @@ int         Response::buildBody()
                         _error = 500;
                         return (1);
                     }
+                    _status = 200;
                     _target_file = _target_file + "/index.html";
                     return (0);
                 } else {
