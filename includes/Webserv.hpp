@@ -11,6 +11,7 @@
 # include <cstring>
 # include <stdlib.h>
 # include <fcntl.h>
+# include <ctime>
 
 /*socket related library*/
 # include <sys/socket.h>

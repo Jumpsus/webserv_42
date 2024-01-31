@@ -1,13 +1,16 @@
 #include "Client.hpp"
 
 
-Client::Client() {}
+Client::Client()
+{
+    _time_stamp = time(NULL);
+}
 
 Client::Client(Server const serv): _serv(serv)
 {
     this->resp.setServer(serv);
     this->req.setMaxBodySize(serv.getClientMaxBodySize());
-    gettimeofday(&_time_stamp, NULL);
+    _time_stamp = time(NULL);
 }
 
 Client::Client(Client const &cli): _serv(cli._serv)
@@ -36,8 +39,24 @@ Client &Client::operator=(Client const &cli)
 
 Client::~Client() {}
 
-void    Client::setSocket(int fd) {
-    _socket_fd = fd;
+unsigned long Client::getServerHost()
+{
+    return this->_serv.getHost();
+}
+
+int     Client::getServerPort()
+{
+    return this->_serv.getPort();
+}
+
+void    Client::setServer(const Server& serv)
+{
+    this->_serv = serv;
+}
+
+void    Client::setSocket(int newsock)
+{
+    this->_socket = newsock;
 }
 
 bool    Client::feed(std::string input, size_t len)
@@ -84,14 +103,14 @@ void        Client::buildResponse()
     resp.buildResponse();
 }
 
-const struct timeval&   Client::getTime() const
+const time_t& Client::getTime() const
 {
     return _time_stamp;
 }
 
 void        Client::updateTime()
 {
-    gettimeofday(&_time_stamp, NULL);
+    _time_stamp = time(NULL);
 }
 
 void        Client::fillReqBody()

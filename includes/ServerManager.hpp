@@ -2,7 +2,7 @@
 # define SERVER_MANAGER_HPP
 
 # define MAX_CONNECTION 1000
-# define CONNECTION_TIMEOUT 30
+# define CONNECTION_TIMEOUT 60
 # define CLIENT_BUFFER 100000
 
 # include "Webserv.hpp"

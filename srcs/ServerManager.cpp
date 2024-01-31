@@ -1,4 +1,5 @@
 #include "ServerManager.hpp"
+//#include "Logger.hpp"
 
 ServerManager::ServerManager(std::vector<Server> const servers)
 {
@@ -37,6 +38,8 @@ ServerManager::~ServerManager() {}
 
 void    ServerManager::setServers()
 {
+    std::cout << std::endl;
+    //Logger::logMsg(MAGENTA, CONSOLE_OUTPUT, "Initializing  Servers...");
     for (std::vector<Server>::iterator it = this->_servers.begin();
          it != this->_servers.end(); it ++)
     {
@@ -59,6 +62,8 @@ void    ServerManager::setServers()
             it->setServer();
         }
         std::cout << "Set Server:" << it->getHost() << " Port:" << it->getPort() << " at fd: " << it->getFd() << std::endl;
+        //Logger::logMsg(MAGENTA, CONSOLE_OUTPUT, "Server Created: ServerName[%s] Host[%lu] Port[%d]",it->getServerName().c_str(),
+        //        it->getHost() , it->getPort());
     }
     return;
 }
@@ -107,7 +112,7 @@ void    ServerManager::startServers()
                 ready--;
             }
         }
-        //checkTimeout();
+        checkTimeout();
     } while(1);
 
     std::cout << "graceful exit()" << std::endl;
@@ -153,6 +158,7 @@ void    ServerManager::acceptConnection(int server_fd)
     socklen_t           client_addr_len = sizeof(client_addr);
     int                 client_fd;
     Client              new_client(_servers_map[server_fd]);
+    char                buf[INET_ADDRSTRLEN];
 
     if (!_servers_map.count(server_fd))
     {
@@ -168,6 +174,8 @@ void    ServerManager::acceptConnection(int server_fd)
         }
         return ;
     }
+    //Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "New Connection From %s, Assigned Socket %d",inet_ntop(AF_INET, &client_addr
+    //                , buf, INET_ADDRSTRLEN), client_fd);
     if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
     {
         std::cerr << "fcntl fd " << client_fd << " error : " << std::endl;
@@ -209,6 +217,8 @@ void    ServerManager::receiveRequest(int read_fd)
         _clients_map[read_fd].updateTime();
         if (_clients_map[read_fd].feed(req, rc))
         {
+            //Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Request Recived From Socket %d, Method=<%s>  URI=<%s>"
+            //                , read_fd, _clients_map[read_fd].req.getMethod().c_str(), _clients_map[read_fd].req.getPath().c_str());
             _clients_map[read_fd].buildResponse();
             removeSet(read_fd, &_read_fd);
             addSet(read_fd, &_write_fd);
@@ -236,7 +246,7 @@ void    ServerManager::writeResponse(int write_fd)
     }
     std::string resp = _clients_map[write_fd].getResponse();
 
-    std::cout << "Response = " << resp << std::endl;
+    //std::cout << "Response = " << resp << std::endl;
 
     /* After recv fd is set not ready for read until Client cancelled connection */
     int rc = send(write_fd, resp.c_str(), resp.length(), 0);
@@ -249,12 +259,15 @@ void    ServerManager::writeResponse(int write_fd)
     
     if (_clients_map[write_fd].req.keepAlive())
     {
+        //Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Response Sent To Socket %d, Stats=<%d>"
+        //                    , write_fd, _clients_map[write_fd].resp.getStatus());
         _clients_map[write_fd].clearContent();
         removeSet(write_fd, &_write_fd);
         addSet(write_fd, &_read_fd);
     } else {
         closeConnection(write_fd);
     }
+    _clients_map[write_fd].updateTime();
 }
 
 void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
@@ -288,8 +301,8 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
     char    pipe_out[MESSAGE_BUFFER * 2];
     int     byte_read = read(cgi.pipe_out[0], pipe_out, MESSAGE_BUFFER * 2);
 
-    std::cout << "pipe_out = " << pipe_out << std::endl;
-    std::cout << "before cgi response = " << _clients_map[read_fd].getResponse() << std::endl;
+    //std::cout << "pipe_out = " << pipe_out << std::endl;
+    //std::cout << "before cgi response = " << _clients_map[read_fd].getResponse() << std::endl;
     if (byte_read > 0) {
         _clients_map[read_fd].updateTime();
 
@@ -306,7 +319,7 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
         _clients_map[read_fd].resp.setError(500);
     }
     else {
-        std::cout << "Read finished\n";
+        //std::cout << "Read finished\n";
         close(cgi.pipe_in[0]);
         close(cgi.pipe_out[0]);
 
@@ -331,14 +344,12 @@ void    ServerManager::addSet(int fd, fd_set* set)
 
 void    ServerManager::removeSet(int fd, fd_set* set)
 {
-    // std::cout << "remove fd = " << fd << " current max_fd = " << _max_fd <<std::endl;
     FD_CLR(fd, set);
 
     int temp_max = 0;
 
     if (fd == _max_fd)
     {
-        //_max_fd--;
         for (int i = 0; i < _max_fd; i++)
         {
             if (FD_ISSET(i, &_write_fd))
@@ -357,7 +368,6 @@ void    ServerManager::removeSet(int fd, fd_set* set)
 
 void    ServerManager::closeConnection(int fd)
 {
-    //std::cout << "close connection fd = " << fd << std::endl;
     if (FD_ISSET(fd, &_server_fd))
     {
         removeSet(fd, &_server_fd);
@@ -377,18 +387,17 @@ void    ServerManager::closeConnection(int fd)
     _clients_map.erase(fd);
 }
 
-/*void    ServerManager::checkTimeout()
+void    ServerManager::checkTimeout()
 {
     for (std::map<int, Client>::iterator cit = _clients_map.begin(); cit != _clients_map.end(); cit++)
     {
         struct timeval  sm_curr;
         gettimeofday(&sm_curr, NULL);
-        if (sm_curr.tv_sec - cit->second.getTime().tv_sec > CONNECTION_TIMEOUT)
+        if (time(NULL) - cit->second.getTime() > CONNECTION_TIMEOUT)
         {
-            cit->second.req.setError(504); //IDK if this is the same as Google Chrome?
-            std::cout << "Connection timeout" << std::endl;
+            //Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "Client %d Timeout, Closing Connection..", cit->first);
             closeConnection(cit->first);
             return ;
         }   
     }
-}*/
+}

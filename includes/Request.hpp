@@ -37,6 +37,7 @@ class Request {
         const std::map<std::string, std::string>&   getHeader() const;
         const std::string&                          getBody() const;
         const std::string&                          getBoundary() const;
+        const std::string&                          getServerName() const;
 
         void                                        setMethod(std::string method);
         void                                        setPath(std::string path);
@@ -63,6 +64,7 @@ class Request {
         std::string                                 _protocol;
         std::string                                 _protocol_version;
         std::string                                 _connection;
+        std::string                                 _server_name;
         int                                         _error;
         size_t                                      _max_body_size;
         bool                                        _multipart;

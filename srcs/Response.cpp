@@ -67,6 +67,11 @@ std::string Response::getBody()
     return this->_body;
 }
 
+int         Response::getStatus()
+{
+    return this->_status;
+}
+
 void        Response::setBody(const std::string& new_body)
 {
     this->_body = new_body;
@@ -104,7 +109,7 @@ void        Response::switchCgiOff()
 
 void        Response::buildResponse()
 {
-    std::cout << "build response\n";
+    //std::cout << "build response\n";
     if (this->_error || buildBody())
     {
         _status = _error;
@@ -140,7 +145,7 @@ void        Response::editResponseToCgi()
 
 int         Response::buildBody()
 {
-    std::cout << "build body\n";
+    //std::cout << "build body\n";
     Location    loc;
 
     if (findMatchLocation(loc))
@@ -287,7 +292,7 @@ int         Response::buildBody()
     {
         if (!readFile(_target_file, _body))
         {
-            std::cout << "target = " << _target_file << std::endl;
+            //std::cout << "target = " << _target_file << std::endl;
             _error = 404;
             return (1);
         }
@@ -329,7 +334,7 @@ int         Response::buildBody()
 
 int Response::handleCgi(const std::string& tg, Location& loc)
 {
-    std::cout << "handle cgi\n";
+    //std::cout << "handle cgi\n";
     if (tg.find("cgi-bin") == std::string::npos)
         return 1;
     std::string ext = tg.substr(tg.find("cgi-bin"));
@@ -361,7 +366,7 @@ int Response::handleCgi(const std::string& tg, Location& loc)
 
 std::string Response::buildHtmlIndex(const std::string& tar_dir)
 {
-    std::cout << "build html index\n";
+    //std::cout << "build html index\n";
     std::string html;
     DIR *dir;
     struct dirent *ent;
@@ -420,7 +425,7 @@ std::string Response::buildHtmlIndex(const std::string& tar_dir)
 
 void        Response::buildErrorBody()
 {
-    std::cout << "build error body\n";
+    //std::cout << "build error body\n";
     _body = "";
     _target_file = ".html";
     if (_error_map.count(_error) > 0 && (_error >= 400 && _error < 500))

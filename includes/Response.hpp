@@ -74,6 +74,7 @@ class Response {
         std::string     getResponse();
         bool            getCgiStatus();
         std::string     getBody();
+        int             getStatus();
         void            setRequest(Request req);
         void            setServer(Server serv);
         void            setError(int error_code);
