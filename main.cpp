@@ -14,6 +14,7 @@ int main(int ac, char **av)
     try 
     {
         Config conf(config_path);
+        servers = conf.getServers();
     }
     catch(std::string error) 
     {  
@@ -22,7 +23,6 @@ int main(int ac, char **av)
     }
 
     //conf.printConfigInfo();
-    servers = conf.getServers();
     ServerManager server_manager(servers);
     server_manager.setServers();
     server_manager.startServers();
