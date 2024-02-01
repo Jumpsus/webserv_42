@@ -162,10 +162,7 @@ void    ServerManager::acceptConnection(int server_fd)
     client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
     if (client_fd < 0)
     {
-        if (errno != EWOULDBLOCK)
-        {
-            std::cerr << RED << "error accept:" << errno << " end server now" << RESET << std::endl;
-        }
+        std::cerr << RED << "error accept:" << errno << " end server now" << RESET << std::endl;
         return ;
     }
     std::cout << YELLOW << "New connection from " << inet_ntop(AF_INET, &client_addr, buf, INET_ADDRSTRLEN) <<
