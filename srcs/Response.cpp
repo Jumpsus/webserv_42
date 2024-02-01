@@ -129,6 +129,7 @@ void        Response::editResponseToCgi()
     std::string     buf_body = _body;
     std::string     word;
     
+    std::string     initial_tg = _target_file;
     while (index < (int)_body.length()) 
     {
         if (ft_is_white_space(_body[index]))
@@ -154,7 +155,15 @@ void        Response::editResponseToCgi()
         else
             index += word.length();
     }
-    _body = buf_body;
+    //check if "Content-type: exist in cgi exe body"
+    if (_target_file == initial_tg) {
+        std::cerr << RED << "Response: no 'Content-type:' line in cgi body" << RESET << std::endl;
+        _error = 500;
+        buildErrorBody();
+    }
+    else {
+        _body = buf_body;
+    }   
     appendFirstLine();
     appendHeaders();
     appendBody();
@@ -345,16 +354,30 @@ int         Response::buildBody()
             return (1);
         }
     }
-
-    _status = 200;
+    if (_status != 200)
+        _status = 200;
     return (0);
 }
 
 int Response::handleCgi(const std::string& tg, Location& loc)
 {
-    //std::cout << "handle cgi\n";
-    if (tg.find("cgi-bin") == std::string::npos)
+    if (tg.find("cgi-bin") == std::string::npos) {
+        std::cerr << RED << "Response: target file " << tg << " don't have cgi-bin directory" << RESET << std::endl;
+        _error = 500;
         return 1;
+    }
+    //check if file exsit and executable
+    struct stat sb;
+    if (stat(tg.substr(2, tg.length() - 2).c_str(), &sb) != 0) {
+        std::cerr << RED << "Response: can't find " << tg << " in cgi-bin directory" << RESET << std::endl;
+        _error = 500;
+        return 1;
+    }
+    if ( !(sb.st_mode & S_IXUSR) ) {
+        std::cerr << RED << "Response: " << tg << " is not executable" << RESET << std::endl;
+        _error = 500;
+        return 1;
+    }
     std::string ext = tg.substr(tg.find("cgi-bin"));
     //std::cout << "ext = " << ext << std::endl;
     std::string file_extension = "." + getExtension(tg);
@@ -373,6 +396,7 @@ int Response::handleCgi(const std::string& tg, Location& loc)
             cgi.setEnv(this->_request, loc);
             cgi.execCgi(_error, _status);
             if (_error != 0) {
+                this->_cgi_status = false;
                 _status = _error;
                 return (1);
             }
