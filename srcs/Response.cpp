@@ -124,12 +124,12 @@ void        Response::editResponseToCgi()
 {
     _response_content.clear();
     
-    int index = 0;
+    std::cout << YELLOW << _body << RESET << std::endl;
+    int             index = 0;
     std::string     current_param;
-    std::string     buf_body = _body;
     std::string     word;
-    
     std::string     initial_tg = _target_file;
+    std::string     buf_body = _body;
     while (index < (int)_body.length()) 
     {
         if (ft_is_white_space(_body[index]))
@@ -146,7 +146,8 @@ void        Response::editResponseToCgi()
             current_param = word;
             index += word.length();
         }
-        else if (current_param == "Content-type:" && word != current_param)
+        else if ( (current_param == "Content-type:" && word != current_param) || 
+                    (word.find("Content-type:") != std::string::npos) )
         {
             if (word.find("html") != std::string::npos)
                 _target_file = ".html";
@@ -163,7 +164,7 @@ void        Response::editResponseToCgi()
     }
     else {
         _body = buf_body;
-    }   
+    }  
     appendFirstLine();
     appendHeaders();
     appendBody();
@@ -178,7 +179,8 @@ int         Response::buildBody()
     {
         // Case use parameter from location in server;
 
-        // check max body size 
+        // check max body size
+        std::cout << MAGENTA << "Find match location" << RESET << std::endl;
         if (loc.getClientMaxBodySize() < _request.getBody().length())
         {
             _error = 413;
@@ -258,16 +260,14 @@ int         Response::buildBody()
                 }
             }
         }
-
-        if (loc.getCgiExt().size() != 0)
+        //get cgi method
+        if (loc.getCgiExt().size() != 0 && _target_file.find("cgi-bin") != std::string::npos)
         {
-            return (handleCgi(_target_file, loc));
+            return (handleCgi(_target_file, loc, true));
         }
-
     } else {
         // Case use parameter from server;
         _target_file = ft_join(_server.getRoot(), _request.getPath());
-        //std::cout << "_target_file = " << _target_file << std::endl;
 
         if (isDirectory(_target_file))
         {
@@ -314,7 +314,7 @@ int         Response::buildBody()
     // handle request type
 
     std::string method = ft_toupper(_request.getMethod());
-
+    std::cout << CYAN << "handle method" << RESET << std::endl;
     if (method == "GET" || method == "HEAD")
     {
         if (!readFile(_target_file, _body))
@@ -325,6 +325,21 @@ int         Response::buildBody()
         }
     } else if (method == "POST" || method == "PUT") {
         /* https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.3 */
+        //handle post method of cgi
+        if (method == "POST" && getExtension(_target_file) != "")
+        {
+            std::vector<Location>   locs = _server.getLocations();
+            for (std::vector<Location>::iterator it = locs.begin(); it != locs.end(); it++)
+            {
+                std::vector<std::string>    cgi_exts = it->getCgiExt();
+                std::string                 exten = _target_file.substr(_target_file.find("."), 3);
+                for (s_iter sit = cgi_exts.begin(); sit != cgi_exts.end(); sit++)
+                {
+                    if (exten == *sit)
+                        return (handleCgi(_target_file, *it, false));
+                }
+            }
+        }
         if (isFileExists(_target_file) && method == "POST")
         {
             _status = 204;
@@ -359,31 +374,33 @@ int         Response::buildBody()
     return (0);
 }
 
-int Response::handleCgi(const std::string& tg, Location& loc)
+int Response::handleCgi(const std::string& tg, Location& loc, bool get)
 {
-    if (tg.find("cgi-bin") == std::string::npos) {
-        std::cerr << RED << "Response: target file " << tg << " don't have cgi-bin directory" << RESET << std::endl;
-        _error = 500;
-        return 1;
-    }
     //check if file exsit and executable
+    std::string     cginame;
+    if (get == true)
+        cginame = tg.substr(2, tg.length() - 2);
+    else
+        cginame = "cgi-bin" + tg.substr(tg.find_last_of('/'));
+    std::cout << YELLOW << cginame << RESET << std::endl;
     struct stat sb;
-    if (stat(tg.substr(2, tg.length() - 2).c_str(), &sb) != 0) {
-        std::cerr << RED << "Response: can't find " << tg << " in cgi-bin directory" << RESET << std::endl;
-        _error = 500;
+    if (stat(cginame.c_str(), &sb) != 0) {
+        std::cerr << RED << "Response: can't find " << cginame << " in cgi-bin directory" << RESET << std::endl;
+        _error = 404;
         return 1;
     }
     if ( !(sb.st_mode & S_IXUSR) ) {
-        std::cerr << RED << "Response: " << tg << " is not executable" << RESET << std::endl;
-        _error = 500;
+        std::cerr << RED << "Response: " << cginame << " is not executable" << RESET << std::endl;
+        _error = 403;
         return 1;
     }
-    std::string ext = tg.substr(tg.find("cgi-bin"));
-    //std::cout << "ext = " << ext << std::endl;
-    std::string file_extension = "." + getExtension(tg);
+    std::string ext = cginame.substr(cginame.find("cgi-bin"));
+    if (getExtension(cginame) == "")
+        return 1;
+    std::string file_extension = "." + getExtension(cginame);
     std::vector<std::string> cgi_ext = loc.getCgiExt();
     //std::cout << "cgi body = " << this->_request.getBody() << std::endl;
-
+    std::cout << YELLOW << "handle cgi" << RESET << std::endl;
     for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
     {
         if (file_extension == (*it))
@@ -394,7 +411,17 @@ int Response::handleCgi(const std::string& tg, Location& loc)
             if (cgi.initPipes(_error) == true)
                 this->_cgi_status = true;
             cgi.setEnv(this->_request, loc);
-            cgi.execCgi(_error, _status);
+            cgi.execCgi(_error);
+            /*waitpid(cgi.getCgiPid(), &_status, 0);
+            if (WIFEXITED(_status))
+            {
+                if (WEXITSTATUS(_status) != 0) {
+                    std::cout << RED << "Cgi fail to execute" << RESET << std::endl;
+                    _error = 500;
+                }
+            }
+            else
+                _status = 200;*/
             if (_error != 0) {
                 this->_cgi_status = false;
                 _status = _error;

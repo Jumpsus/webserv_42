@@ -94,7 +94,6 @@ bool    Request::parseRequest(std::string req)
     std::pair<std::string, std::string> tempHeader;
     bool                                completed_header = false;
 
-    std::cout << "req = " << req << std::endl;
     /* handle request-line (3.1.1) 
        method SP request-target SP HTTP-version CRLF */
     found = req.find("\r\n");

@@ -34,7 +34,7 @@ class CgiHandler {
         void                                printEnv();
 
         /*system call*/
-        void                                execCgi(int &error, int &status);
+        void                                execCgi(int &error);
         
         /*input and output pipe*/
         int                                 pipe_in[2]; //to get input body throw by response

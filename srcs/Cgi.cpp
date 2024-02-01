@@ -89,7 +89,7 @@ void                CgiHandler::setArgs0(const std::string& extension, const Loc
         if (path_str != "")
             this->_args0 = path_str;
     }
-    if (extension == ".cgi") {
+    if (extension == ".cgi" || extension == ".pl") {
         path_str = ft_find_by_keyword(loc_ptr.getCgiPath(), "perl");
         if (path_str != "")
             this->_args0 = path_str;
@@ -210,7 +210,7 @@ bool                CgiHandler::initPipes(int &error)
     return true;
 }
 
-void                CgiHandler::execCgi(int &error, int &status)
+void                CgiHandler::execCgi(int &error)
 {
     //can't set _args
     if (!this->_args || this->_args[0] == NULL || this->_args[1] == NULL) {
@@ -242,19 +242,7 @@ void                CgiHandler::execCgi(int &error, int &status)
         close(pipe_out[1]);
         execve(_args[0], _args, _cgi_env);
     }
-    else {
-        //wait until child process finish, and check if execve success
-        waitpid(_cgi_pid, &status, 0);
-        if (WIFEXITED(status))
-        {
-            if (WEXITSTATUS(status) != 0) {
-                std::cout << RED << "Cgi fail to execute" << RESET << std::endl;
-                error = 500;
-            }
-            else
-                status = 200;
-        }
-    }
+    else {}
 }
 
 /*This function check if PATH_INFO exist it request path, by finding the occurance of cgi extentions*/
