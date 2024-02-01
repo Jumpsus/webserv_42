@@ -101,6 +101,7 @@ class Response {
         std::string                         _body;
         std::string                         _target_file;
         std::map<int, std::string>          _error_map;
+        std::string                         _content_type;
         bool                                _cgi_status;
 
         void                                createHeaders();

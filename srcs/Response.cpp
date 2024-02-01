@@ -7,6 +7,7 @@ Response::Response()
     this->_error = 0;
     this->_auto_index = false;
     this->_body = "";
+    this->_content_type = "",
     this->_target_file = "";
     this->_cgi_status = false;
 }
@@ -29,6 +30,7 @@ Response::Response(Response const &response)
         this->_auto_index = response._auto_index;
         this->_header = response._header;
         this->_body = response._body;
+        this->_content_type = response._content_type,
         this->_target_file = response._target_file;
         this->_error_map = response._error_map;
         this->_cgi_status = response._cgi_status;
@@ -49,6 +51,7 @@ Response &Response::operator=(Response const &response)
         this->_auto_index = response._auto_index;
         this->_header = response._header;
         this->_body = response._body;
+        this->_content_type = response._content_type,
         this->_target_file = response._target_file;
         this->_error_map = response._error_map;
         this->_cgi_status = response._cgi_status;
@@ -227,7 +230,7 @@ int         Response::buildBody()
             {
                 _status = 301;
                 _location = _request.getPath() + "/";
-                return (1);
+                return (0);
             }
 
             std::vector<std::string> indexs = loc.getIndex();
@@ -247,12 +250,12 @@ int         Response::buildBody()
             {
                 if (loc.getAutoIndex())
                 {
-                    // TODO: handle auto index
                     _body = buildHtmlIndex(_target_file);
                     if (_body == "") {
                         _error = 500;
                         return (1);
                     }
+                    _content_type = "text/html";
                     return (0);
                 } else {
                     _error = 403;
@@ -530,7 +533,13 @@ void        Response::appendFirstLine()
 
 void        Response::createHeaders()
 {
-    _header["Content-Type"] = mapContentType(_target_file);
+    if (_content_type == "")
+    {
+        std::cout << "empty type" << std::endl;
+        _content_type = mapContentType(_target_file);
+    }
+
+    _header["Content-Type"] = _content_type;
     _header["Content-Length"] = ft_to_string(_body.length());
     _header["Location"] = _location;
 
@@ -592,6 +601,7 @@ void        Response::clear()
     this->_body = "";
     this->_target_file = "";
     this->_location = "";
+    this->_content_type = "",
     this->_cgi_status = false;
     _request.clear();
 }
