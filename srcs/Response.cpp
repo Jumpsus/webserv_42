@@ -535,7 +535,6 @@ void        Response::createHeaders()
 {
     if (_content_type == "")
     {
-        std::cout << "empty type" << std::endl;
         _content_type = mapContentType(_target_file);
     }
 
