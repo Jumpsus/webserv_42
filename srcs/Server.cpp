@@ -11,13 +11,11 @@ Server::Server()
     _client_max_body_size = DEFAULT_MAX_BODY_SIZE; //1MB
     _autoindex = true;
     _root = "";
-    // initErrorPage();
 }
 
 Server::Server(std::string const serverConfig)
 {
     //std::cout << "start Server()" << std::endl;
-    // initErrorPage();
     parseServer(serverConfig);
     if (_locations.size() == 0)
         throw (std::string("location not declared in server"));
