@@ -1,3 +1,6 @@
+NAME = webserv
+FLAGS = -std=c++98 -Wall -Wextra -Werror -g3 -fsanitize=address
+INCS = -I includes/
 SRCS =	srcs/utils.cpp \
 		srcs/Request.cpp \
 		srcs/Response.cpp \
@@ -6,12 +9,26 @@ SRCS =	srcs/utils.cpp \
 		srcs/Location.cpp \
 		srcs/ServerManager.cpp \
 		srcs/Client.cpp \
-		srcs/Cgi.cpp
+		srcs/Cgi.cpp \
+		main.cpp
 
-all:
-	c++ -std=c++98 -Wall -Wextra -Werror main.cpp ${SRCS} -I includes -o webserv
+OBJS = $(SRCS:.cpp=.o)
 
-clean:
-	rm webserv
+%.o: %.cpp
+	$(CXX) $(FLAGS) $(INCS) $ -c $< -o $@
 
-re: clean all
+all: $(NAME)
+
+$(NAME) : $(OBJS)
+	$(CXX) $(FLAGS) ${OBJS} $(INCS) -o $(NAME)
+
+clean: $(OBJS)
+	rm $(OBJS)
+
+fclean:
+	rm $(OBJS)
+	rm -f $(NAME)
+
+re: fclean all
+
+.PHONY: all clean fclean re

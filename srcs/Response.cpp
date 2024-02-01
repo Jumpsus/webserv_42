@@ -123,21 +123,47 @@ void        Response::buildResponse()
 void        Response::editResponseToCgi()
 {
     _response_content.clear();
-    int         body_len = _body.length();
-    std::string body_buff;
-    std::stringstream   ssb(_body);
-    int                 del_pos = 0;
-    while (getline(ssb, body_buff,'\n')) {
-        if (body_buff.find("Content-type:") != std::string::npos && body_buff.find("html") != std::string::npos)
-            _target_file = ".html";
-        if (body_buff.length() == 0)
-            del_pos++;
-        if (body_buff != "<!DOCTYPE html>" && body_buff != "<html>")
-            del_pos += body_buff.length();
+    
+    int index = 0;
+    std::string     current_param;
+    std::string     buf_body = _body;
+    std::string     word;
+    
+    std::string     initial_tg = _target_file;
+    while (index < (int)_body.length()) 
+    {
+        if (ft_is_white_space(_body[index]))
+        {
+            index++;
+            continue;
+        }
+        buf_body = _body.substr(index, _body.length());
+        word = findNextWord(buf_body);
+        if (word.find('<') != std::string::npos && word.find('>') != std::string::npos)
+            break;
+        if (word == "Content-type:")
+        {
+            current_param = word;
+            index += word.length();
+        }
+        else if (current_param == "Content-type:" && word != current_param)
+        {
+            if (word.find("html") != std::string::npos)
+                _target_file = ".html";
+            index += word.length();
+        }
         else
-            break ;
+            index += word.length();
     }
-    _body = _body.substr(del_pos, body_len - del_pos);
+    //check if "Content-type: exist in cgi exe body"
+    if (_target_file == initial_tg) {
+        std::cerr << RED << "Response: no 'Content-type:' line in cgi body" << RESET << std::endl;
+        _error = 500;
+        buildErrorBody();
+    }
+    else {
+        _body = buf_body;
+    }   
     appendFirstLine();
     appendHeaders();
     appendBody();
@@ -274,6 +300,7 @@ int         Response::buildBody()
                         _error = 500;
                         return (1);
                     }
+                    _status = 200;
                     _target_file = _target_file + "/index.html";
                     return (0);
                 } else {
@@ -327,16 +354,30 @@ int         Response::buildBody()
             return (1);
         }
     }
-
-    _status = 200;
+    if (_status != 200)
+        _status = 200;
     return (0);
 }
 
 int Response::handleCgi(const std::string& tg, Location& loc)
 {
-    //std::cout << "handle cgi\n";
-    if (tg.find("cgi-bin") == std::string::npos)
+    if (tg.find("cgi-bin") == std::string::npos) {
+        std::cerr << RED << "Response: target file " << tg << " don't have cgi-bin directory" << RESET << std::endl;
+        _error = 500;
         return 1;
+    }
+    //check if file exsit and executable
+    struct stat sb;
+    if (stat(tg.substr(2, tg.length() - 2).c_str(), &sb) != 0) {
+        std::cerr << RED << "Response: can't find " << tg << " in cgi-bin directory" << RESET << std::endl;
+        _error = 500;
+        return 1;
+    }
+    if ( !(sb.st_mode & S_IXUSR) ) {
+        std::cerr << RED << "Response: " << tg << " is not executable" << RESET << std::endl;
+        _error = 500;
+        return 1;
+    }
     std::string ext = tg.substr(tg.find("cgi-bin"));
     //std::cout << "ext = " << ext << std::endl;
     std::string file_extension = "." + getExtension(tg);
@@ -355,6 +396,7 @@ int Response::handleCgi(const std::string& tg, Location& loc)
             cgi.setEnv(this->_request, loc);
             cgi.execCgi(_error, _status);
             if (_error != 0) {
+                this->_cgi_status = false;
                 _status = _error;
                 return (1);
             }
@@ -488,7 +530,7 @@ void        Response::appendHeaders()
 void        Response::appendBody()
 {
     _response_content.append(_body);
-    std::cout << "body = " << _body << std::endl;
+    //std::cout << "body = " << _body << std::endl;
 }
 
 bool        Response::findMatchLocation(Location &loc)

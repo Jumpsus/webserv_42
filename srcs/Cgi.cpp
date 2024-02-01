@@ -89,6 +89,11 @@ void                CgiHandler::setArgs0(const std::string& extension, const Loc
         if (path_str != "")
             this->_args0 = path_str;
     }
+    if (extension == ".cgi") {
+        path_str = ft_find_by_keyword(loc_ptr.getCgiPath(), "perl");
+        if (path_str != "")
+            this->_args0 = path_str;
+    }
 }
 
 std::string         CgiHandler::_getScriptFilename(const std::string& cgi_path)
@@ -229,21 +234,26 @@ void                CgiHandler::execCgi(int &error, int &status)
     }
     //successful fork
     else if (_cgi_pid == 0) {
-        //extern char**       environ;
-        //for (int i = 0; _args[i]; i++)
-        //    std::cout << _args[i] << std::endl;
-        //std::cout << std::endl;
-        //for (int j = 0; _cgi_env[j]; j++)
-        //    std::cout << _cgi_env[j] << std::endl;
-        //std::cout << std::endl;
         dup2(pipe_in[0], STDIN_FILENO);
         dup2(pipe_out[1], STDOUT_FILENO);
         close(pipe_in[0]);
         close(pipe_in[1]);
         close(pipe_out[0]);
         close(pipe_out[1]);
-        status = execve(_args[0], _args, _cgi_env);
-        exit(status);
+        execve(_args[0], _args, _cgi_env);
+    }
+    else {
+        //wait until child process finish, and check if execve success
+        waitpid(_cgi_pid, &status, 0);
+        if (WIFEXITED(status))
+        {
+            if (WEXITSTATUS(status) != 0) {
+                std::cout << RED << "Cgi fail to execute" << RESET << std::endl;
+                error = 500;
+            }
+            else
+                status = 200;
+        }
     }
 }
 
@@ -283,8 +293,9 @@ std::string             CgiHandler::_decodeQuery(std::string req_query)
     {
         if (req_query.length() < p_pos + 2)
             break ;
-        char    r_char = ft_htoi(req_query.substr(p_pos + 1, 2));
-        req_query.replace(p_pos, 3, ft_to_string(r_char));
+        std::string slice = ft_tolower(req_query.substr(p_pos + 1, 2));
+        std::string char_buf(1, ft_htoi(slice));
+        req_query.replace(p_pos, 3, char_buf);
         p_pos = req_query.find("%");
     }
     return req_query;

@@ -1,6 +1,15 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
+/*define color when cout*/
+# define RESET          "\x1B[0m"
+# define RED            "\x1B[31m"
+# define WHITE          "\x1B[37m"
+# define YELLOW         "\x1B[33m"
+# define BLUE           "\x1B[94m"
+# define CYAN           "\x1B[36m"
+# define MAGENTA        "\x1B[95m"
+
 /*related to Server Manager*/
 # define MESSAGE_BUFFER 40000
 
