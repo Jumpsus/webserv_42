@@ -1,5 +1,4 @@
 #include "ServerManager.hpp"
-//#include "Logger.hpp"
 
 ServerManager::ServerManager(std::vector<Server> const servers)
 {
@@ -81,10 +80,7 @@ void    ServerManager::startServers()
         memcpy(&current_read, &_read_fd, sizeof(_read_fd));
         memcpy(&current_write, &_write_fd, sizeof(_write_fd));
 
-        //std::cout << "max_fd before select = " << _max_fd << std::endl;
         int ready = select(_max_fd + 1, &current_read, &current_write, NULL, &timeout);
-
-        //std::cout << "ready " << ready << std::endl;
         if (ready < 0)
         {
             std::cerr << RED << "select failed: " << errno << RESET << std::endl;
@@ -302,8 +298,6 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
     char    pipe_out[MESSAGE_BUFFER * 2];
     int     byte_read = read(cgi.pipe_out[0], pipe_out, MESSAGE_BUFFER * 2);
 
-    std::cout << "pipe_out = " << pipe_out << std::endl;
-    //std::cout << "before cgi response = " << _clients_map[read_fd].getResponse() << std::endl;
     if (byte_read > 0) {
         _clients_map[read_fd].updateTime();
 
