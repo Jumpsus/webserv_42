@@ -210,12 +210,14 @@ void    ServerManager::receiveRequest(int read_fd)
         {
             std::cout << CYAN << "Request received from Socket " << read_fd << " Method = " << 
                                     _clients_map[read_fd].req.getMethod() << " URI= " << _clients_map[read_fd].req.getPath() << 
-                                    RESET << std::endl; 
+                                    RESET << std::endl;
+            _clients_map[read_fd].req.printRequest();
             _clients_map[read_fd].buildResponse();
             removeSet(read_fd, &_read_fd);
             addSet(read_fd, &_write_fd);
             if (_clients_map[read_fd].resp.getCgiStatus() == true) {
                 writeCgi(read_fd, _clients_map[read_fd].resp.cgi);
+                return ;
             }
         }
         ft_memset(buffer, 0, sizeof(buffer));
@@ -269,10 +271,8 @@ void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
     std::string body = _clients_map[write_fd].req.getBody();
     int         body_sent = body.length();
 
-    if (body_sent >= MESSAGE_BUFFER)
-        body_sent = write(cgi.pipe_in[1], body.c_str(), MESSAGE_BUFFER);
-    else if (body_sent > 0 && body_sent < MESSAGE_BUFFER)
-        body_sent = write(cgi.pipe_in[1], body.c_str(), body.length());
+    std::cout << CYAN << "Write cgi, body = " << body << " fd = " << write_fd << RESET << std::endl; 
+    body_sent = write(cgi.pipe_in[1], body.c_str(), body.length());
     
     if (body_sent < 0) {
         std::cerr << RED << "Fail to send body to cgi" << RESET << std::endl;
@@ -280,11 +280,10 @@ void    ServerManager::writeCgi(int write_fd, CgiHandler& cgi)
         close(cgi.pipe_out[1]);
         _clients_map[write_fd].resp.setError(500);
     }
-    else if (body_sent == 0) {
+    else {
+        std::cout << CYAN << "write success" << RESET << std::endl;
         close(cgi.pipe_in[1]);
         close(cgi.pipe_out[1]);
-    }
-    else {
         _clients_map[write_fd].updateTime();
         body = body.substr(body_sent);
     }
@@ -317,8 +316,15 @@ void    ServerManager::readCgi(int read_fd, CgiHandler& cgi)
         /*wait until cgi's child process is done*/
         int cgi_status;
         waitpid(cgi.getCgiPid(), &cgi_status, 0);
-        if (WEXITSTATUS(cgi_status) != 0)
-            _clients_map[read_fd].resp.setError(502);
+        if (WIFEXITED(cgi_status))
+        {
+            {
+                if (WEXITSTATUS(cgi_status) != 0) {
+                    std::cout << RED << "Cgi fail to execute" << RESET << std::endl;
+                    _clients_map[read_fd].resp.setError(500);
+                }
+            }
+        }
         _clients_map[read_fd].resp.switchCgiOff();
         _clients_map[read_fd].resp.editResponseToCgi();
     }
