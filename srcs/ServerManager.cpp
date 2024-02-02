@@ -211,7 +211,6 @@ void    ServerManager::receiveRequest(int read_fd)
             std::cout << CYAN << "Request received from Socket " << read_fd << " Method = " << 
                                     _clients_map[read_fd].req.getMethod() << " URI= " << _clients_map[read_fd].req.getPath() << 
                                     RESET << std::endl;
-            _clients_map[read_fd].req.printRequest();
             _clients_map[read_fd].buildResponse();
             removeSet(read_fd, &_read_fd);
             addSet(read_fd, &_write_fd);

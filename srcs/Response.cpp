@@ -126,6 +126,7 @@ void        Response::buildResponse()
 void        Response::editResponseToCgi()
 {
     _response_content.clear();
+    _content_type = "";
     
     std::cout << YELLOW << _body << RESET << std::endl;
     int             index = 0;
@@ -152,8 +153,11 @@ void        Response::editResponseToCgi()
         else if ( (current_param == "Content-type:" && word != current_param) || 
                     (word.find("Content-type:") != std::string::npos) )
         {
+            std::cout << "word = " << word << std::endl;
+            std::cout << "parse _target_file" << std::endl;
             if (word.find("html") != std::string::npos)
                 _target_file = ".html";
+            std::cout << _target_file << std::endl;
             index += word.length();
         }
         else
@@ -161,8 +165,10 @@ void        Response::editResponseToCgi()
     }
     //check if "Content-type: exist in cgi exe body"
     if (_target_file == initial_tg) {
-        std::cerr << RED << "Response: no 'Content-type:' line in cgi body" << RESET << std::endl;
-        _error = 500;
+        if (_error != 500) {
+            std::cerr << RED << "Response: no 'Content-type:' line in cgi body" << RESET << std::endl;
+            _error = 500;
+        }
         buildErrorBody();
     }
     else {
@@ -317,7 +323,7 @@ int         Response::buildBody()
     // handle request type
 
     std::string method = ft_toupper(_request.getMethod());
-    std::cout << CYAN << "handle method" << RESET << std::endl;
+    //std::cout << CYAN << "handle method" << RESET << std::endl;
     if (method == "GET" || method == "HEAD")
     {
         if (!readFile(_target_file, _body))
@@ -385,7 +391,7 @@ int Response::handleCgi(const std::string& tg, Location& loc, bool get)
         cginame = tg.substr(2, tg.length() - 2);
     else
         cginame = "cgi-bin" + tg.substr(tg.find_last_of('/'));
-    std::cout << YELLOW << cginame << RESET << std::endl;
+    //std::cout << YELLOW << cginame << RESET << std::endl;
     struct stat sb;
     if (stat(cginame.c_str(), &sb) != 0) {
         std::cerr << RED << "Response: can't find " << cginame << " in cgi-bin directory" << RESET << std::endl;
@@ -403,7 +409,7 @@ int Response::handleCgi(const std::string& tg, Location& loc, bool get)
     std::string file_extension = "." + getExtension(cginame);
     std::vector<std::string> cgi_ext = loc.getCgiExt();
     //std::cout << "cgi body = " << this->_request.getBody() << std::endl;
-    std::cout << YELLOW << "handle cgi" << RESET << std::endl;
+    //std::cout << YELLOW << "handle cgi" << RESET << std::endl;
     for (std::vector<std::string>::iterator it = cgi_ext.begin(); it != cgi_ext.end(); it++)
     {
         if (file_extension == (*it))
@@ -488,7 +494,7 @@ std::string Response::buildHtmlIndex(const std::string& tar_dir)
             html.append("</td>\n\t\t\t</tr>");
         }
         closedir(dir);
-        html.append("\t\t/table>\n\t</body>\n</html>\n");
+        html.append("\t\t</table>\n\t</body>\n</html>\n");
         return html;
     }
     else
@@ -533,8 +539,10 @@ void        Response::appendFirstLine()
 
 void        Response::createHeaders()
 {
+    std::cout << _content_type << std::endl;
     if (_content_type == "")
     {
+        //std::cout << "empty type" << std::endl;
         _content_type = mapContentType(_target_file);
     }
 
