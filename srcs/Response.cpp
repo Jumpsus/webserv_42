@@ -272,7 +272,12 @@ int         Response::buildBody()
         //get cgi method
         if (loc.getCgiExt().size() != 0 && _target_file.find("cgi-bin") != std::string::npos)
         {
-            return (handleCgi(_target_file, loc, true));
+            if (ft_toupper(_request.getMethod()) == "GET")
+            {
+                return (handleCgi(_target_file, loc, true));
+            } else if (ft_toupper(_request.getMethod()) == "POST") {
+                return (handleCgi(_target_file, loc, false));
+            }
         }
     } else {
         // Case use parameter from server;
