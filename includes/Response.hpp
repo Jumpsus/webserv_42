@@ -83,7 +83,7 @@ class Response {
 
         void            buildResponse();
         void            printResponse();
-        int             handleCgi(const std::string& tg, Location& loc, bool get);
+        int             handleCgi(const std::string& tg, Location& loc);
         std::string     buildHtmlIndex(const std::string& tar_dir);
         void            editResponseToCgi();
         void            clear();
